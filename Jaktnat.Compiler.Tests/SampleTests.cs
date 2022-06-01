@@ -17,14 +17,14 @@ public class SampleTests
 
         var assembly = compiler.CompileText(contents);
 
-        var programType = assembly.GetType("Program");
+        var programType = assembly.GetType("Jaktnat.Output.Program");
 
         if (programType == null)
         {
             throw new InvalidOperationException("Jaktnat compiler output assembly does not contain a Program class");
         }
         
-        var mainMethod = programType.GetMethod("Main", BindingFlags.Static);
+        var mainMethod = programType.GetMethod("Main", BindingFlags.Static | BindingFlags.Public);
 
         if (mainMethod == null)
         {
@@ -37,7 +37,7 @@ public class SampleTests
 
         mainMethod.Invoke(null, new object[] { Array.Empty<string>() });
 
-        var output = sw.ToString();
+        var output = sw.ToString().ReplaceLineEndings("\n");
 
         if (expectation.Output != null)
         {

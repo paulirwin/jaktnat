@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jaktnat.Compiler", "Jaktnat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jaktnat.Compiler.Tests", "Jaktnat.Compiler.Tests\Jaktnat.Compiler.Tests.csproj", "{80B87679-442F-42D7-98BC-8A3BFA70EBFD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jaktnat.Runtime", "Jaktnat.Runtime\Jaktnat.Runtime.csproj", "{07473A96-D474-4047-B0B9-3EBB9A077945}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{80B87679-442F-42D7-98BC-8A3BFA70EBFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{80B87679-442F-42D7-98BC-8A3BFA70EBFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{80B87679-442F-42D7-98BC-8A3BFA70EBFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07473A96-D474-4047-B0B9-3EBB9A077945}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07473A96-D474-4047-B0B9-3EBB9A077945}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07473A96-D474-4047-B0B9-3EBB9A077945}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07473A96-D474-4047-B0B9-3EBB9A077945}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
