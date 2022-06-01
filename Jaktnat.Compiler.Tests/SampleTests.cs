@@ -9,8 +9,18 @@ public class SampleTests
 {
     [Theory]
     [ClassData(typeof(SampleTestData))]
-    public void SampleTestRunner(string filePath, string contents)
+    public void SampleTestRunner(string filePath)
     {
+        using var stream = typeof(SampleTests).Assembly.GetManifestResourceStream(filePath);
+
+        if (stream == null)
+        {
+            throw new InvalidOperationException($"Could not open stream for embedded resource at path {filePath}");
+        }
+
+        using var reader = new StreamReader(stream);
+        var contents = reader.ReadToEnd();
+
         var expectation = ParseExpectation(contents);
 
         var compiler = new JaktnatCompiler();

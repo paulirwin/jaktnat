@@ -8,11 +8,13 @@ function: 'function' NAME LPAREN RPAREN block;
 
 block: LCURLY statement* RCURLY;
 
-statement: block | expression;
+statement: block | expression | ifStatement;
+
+ifStatement: 'if' expression block;
 
 expression: operand | literal;
 
-literal: number | STRING;
+literal: number | STRING | TRUE | FALSE;
 
 number: (FLOATING | INTEGER) numberSuffix?;
 
@@ -24,6 +26,8 @@ call: NAME LPAREN callArgument* RPAREN;
 
 callArgument: expression COMMA?;
 
+TRUE: 'true';
+FALSE: 'false';
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;
 

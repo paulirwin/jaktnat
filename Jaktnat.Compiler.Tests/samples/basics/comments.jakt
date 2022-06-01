@@ -1,0 +1,7 @@
+﻿/// Expect:
+/// - output: "hello\n"
+
+function main() {
+    // This is a comment
+    println("hello")
+}

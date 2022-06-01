@@ -2,7 +2,7 @@
 
 namespace Jaktnat.Compiler.Syntax;
 
-public class CallSyntax : SyntaxNode
+public class CallSyntax : ExpressionSyntax
 {
     public CallSyntax(string name, IList<CallArgumentSyntax> arguments)
     {

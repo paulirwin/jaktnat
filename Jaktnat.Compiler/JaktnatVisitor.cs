@@ -66,9 +66,8 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     public override SyntaxNode? VisitCallArgument(JaktnatParser.CallArgumentContext context)
     {
         var name = (string?)null; // TODO: support parameter names
-        var expr = Visit(context.expression());
 
-        if (expr == null)
+        if (VisitExpression(context.expression()) is not ExpressionSyntax expr)
         {
             throw new ParserError("Unable to parse call argument expression", context.SourceInterval);
         }
@@ -90,6 +89,20 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         if (number != null)
         {
             return VisitNumber(number);
+        }
+
+        var t = context.TRUE();
+
+        if (t != null)
+        {
+            return new LiteralExpressionSyntax(true);
+        }
+
+        var f = context.FALSE();
+
+        if (f != null)
+        {
+            return new LiteralExpressionSyntax(false);
         }
 
         return null;
@@ -126,5 +139,20 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
 
         return null;
+    }
+
+    public override SyntaxNode? VisitIfStatement(JaktnatParser.IfStatementContext context)
+    {
+        if (VisitExpression(context.expression()) is not ExpressionSyntax cond)
+        {
+            throw new ParserError("Unable to parse if condition", context.SourceInterval);
+        }
+
+        if (VisitBlock(context.block()) is not BlockSyntax block)
+        {
+            throw new ParserError("Unable to parse if block", context.SourceInterval);
+        }
+
+        return new IfSyntax(cond, block);
     }
 }

@@ -9,13 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="samples\basics\comments.jakt" />
+    <None Remove="samples\basics\float_literals.jakt" />
     <None Remove="samples\basics\hello.jakt" />
     <None Remove="samples\basics\hello_number.jakt" />
+    <None Remove="samples\basics\opening_curly_brace_on_newline.jakt" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="samples\basics\float_literals.jakt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="samples\basics\comments.jakt" />
     <EmbeddedResource Include="samples\basics\hello.jakt" />
     <EmbeddedResource Include="samples\basics\hello_number.jakt" />
+    <EmbeddedResource Include="samples\basics\opening_curly_brace_on_newline.jakt" />
   </ItemGroup>
 
   <ItemGroup>

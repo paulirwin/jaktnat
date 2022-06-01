@@ -18,6 +18,11 @@ internal static class NameResolutionEngine
         {
             Resolve(context, function.Body);
         }
+        else if (node is IfSyntax ifSyntax)
+        {
+            Resolve(context, ifSyntax.Condition);
+            Resolve(context, ifSyntax.Block);
+        }
         else if (node is CallSyntax call)
         {
             call.PossibleMatchedMethods = FreeFunctionResolver.Resolve(context, call.Name);

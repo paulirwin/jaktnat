@@ -31,13 +31,7 @@ internal static class TopLevelFunctionILGenerator
             throw new NotImplementedException("Only block syntax is supported for functions at this time");
         }
 
-        foreach (var child in block.Children)
-        {
-            if (child is CallSyntax callSyntax)
-            {
-                FunctionCallILGenerator.GenerateFunctionCall(context, il, callSyntax);
-            }
-        }
+        BlockILGenerator.GenerateBlock(context, il, block);
 
         il.Append(il.Create(OpCodes.Ret));
     }

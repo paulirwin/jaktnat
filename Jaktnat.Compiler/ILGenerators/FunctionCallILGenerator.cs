@@ -32,41 +32,11 @@ internal static class FunctionCallILGenerator
             for (int argIndex = paramIndex; argIndex < stop; argIndex++)
             {
                 var argument = callSyntax.Arguments[argIndex];
-                if (argument.Expression is LiteralExpressionSyntax literal)
-                {
-                    if (literal.ExpressionType == param.ParameterType)
-                    {
-                        var op = GetLoadLiteralOp(il, literal);
 
-                        il.Append(op);
-                    }
-                    else if (literal.ExpressionType.IsValueType && param.ParameterType == typeof(object))
-                    {
-                        var tempType = il.Body.Method.DeclaringType.Module.ImportReference(literal.ExpressionType);
-                        
-                        il.Append(GetLoadLiteralOp(il, literal)); // put literal on stack
-                        il.Append(il.Create(OpCodes.Box, tempType)); // constrain (box) value type to parameter type
-                    }
-                }
-                else
-                {
-                    throw new NotSupportedException("Passing anything other than a literal as a function argument is not yet implemented");
-                }
+                ExpressionILGenerator.GenerateExpression(context, il, argument.Expression, param.ParameterType);
             }
         }
 
         il.Append(il.Create(OpCodes.Call, methodRef));
-    }
-
-    private static Instruction GetLoadLiteralOp(ILProcessor il, LiteralExpressionSyntax literal)
-    {
-        var op = literal.Value switch
-        {
-            string str => il.Create(OpCodes.Ldstr, str),
-            long l => il.Create(OpCodes.Ldc_I8, l),
-            double d => il.Create(OpCodes.Ldc_R8, d),
-            _ => throw new NotImplementedException($"Passing a {literal.Value.GetType()} literal as a function argument is not yet implemented"),
-        };
-        return op;
     }
 }
