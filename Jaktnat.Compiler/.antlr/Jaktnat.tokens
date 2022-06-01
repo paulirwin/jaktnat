@@ -1,0 +1,16 @@
+T__0=1
+NAME=2
+STRING=3
+LPAREN=4
+RPAREN=5
+LCURLY=6
+RCURLY=7
+COMMA=8
+LINE_COMMENT=9
+WHITESPACE=10
+'function'=1
+'('=4
+')'=5
+'{'=6
+'}'=7
+','=8
