@@ -10,10 +10,12 @@
 
   <ItemGroup>
     <None Remove="samples\basics\hello.jakt" />
+    <None Remove="samples\basics\hello_number.jakt" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="samples\basics\hello.jakt" />
+    <EmbeddedResource Include="samples\basics\hello_number.jakt" />
   </ItemGroup>
 
   <ItemGroup>

@@ -3,9 +3,9 @@ using Jaktnat.Runtime;
 
 namespace Jaktnat.Compiler.Reflection;
 
-internal static class TopLevelFunctionResolver
+internal static class FreeFunctionResolver
 {
-    public static MethodInfo? Resolve(CompilationContext context, string name)
+    public static IList<MethodInfo> Resolve(CompilationContext context, string name)
     {
         var matches = new List<MethodInfo>();
 
@@ -17,17 +17,13 @@ internal static class TopLevelFunctionResolver
             foreach (var type in types)
             {
                 var methods = type.GetMethods(BindingFlags.Static | BindingFlags.Public)
-                    .Where(i => i.GetCustomAttribute<FreeFunctionAttribute>() is { Name: string freeName } && freeName.Equals(name));
+                    .Where(i => i.GetCustomAttribute<FreeFunctionAttribute>() is { Name: string freeName } 
+                                && freeName.Equals(name));
 
                 matches.AddRange(methods);
             }
         }
 
-        return matches.Count switch
-        {
-            0 => null,
-            > 1 => throw new AmbiguousMatchException($"Unable to resolve free function \"{name}\", multiple matches found: {string.Join(",", matches)}"),
-            _ => matches[0]
-        };
+        return matches;
     }
 }

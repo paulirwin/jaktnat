@@ -16,6 +16,10 @@ internal class Program
 
         var fileText = File.ReadAllText(args[0]);
 
-        compiler.CompileText(fileText);
+        var assemblyName = Path.GetFileNameWithoutExtension(args[0]);
+
+        compiler.CompileText(assemblyName, fileText);
+
+        Console.WriteLine("Build succeeded");
     }
 }

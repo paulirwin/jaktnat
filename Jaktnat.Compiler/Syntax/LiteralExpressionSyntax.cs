@@ -8,4 +8,6 @@ public class LiteralExpressionSyntax : ExpressionSyntax
     }
 
     public object Value { get; }
+
+    public Type ExpressionType => Value.GetType(); // TODO: support null somehow?
 }

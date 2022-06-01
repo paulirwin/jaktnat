@@ -1,4 +1,6 @@
-﻿namespace Jaktnat.Compiler.Syntax;
+﻿using System.Reflection;
+
+namespace Jaktnat.Compiler.Syntax;
 
 public class CallSyntax : SyntaxNode
 {
@@ -11,4 +13,8 @@ public class CallSyntax : SyntaxNode
     public string Name { get; }
 
     public IList<CallArgumentSyntax> Arguments { get; }
+
+    public IList<MethodInfo>? PossibleMatchedMethods { get; set; }
+
+    public MethodInfo? MatchedMethod { get; set; }
 }

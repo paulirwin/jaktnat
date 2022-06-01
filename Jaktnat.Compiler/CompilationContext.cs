@@ -1,16 +1,16 @@
 ﻿using System.Reflection;
-using Mono.Cecil;
 
 namespace Jaktnat.Compiler;
 
 internal class CompilationContext
 {
-    public CompilationContext(AssemblyDefinition currentAssembly)
+    public CompilationContext(Assembly runtimeAssembly)
     {
-        CurrentAssembly = currentAssembly;
+        RuntimeAssembly = runtimeAssembly;
+        LoadedAssemblies.Add(runtimeAssembly);
     }
 
-    public AssemblyDefinition CurrentAssembly { get; }
+    public Assembly RuntimeAssembly { get; }
 
-    public IList<Assembly> LoadedAssemblies { get; set; } = new List<Assembly>();
+    public IList<Assembly> LoadedAssemblies { get; } = new List<Assembly>();
 }

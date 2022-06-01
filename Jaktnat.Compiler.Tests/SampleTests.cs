@@ -15,9 +15,10 @@ public class SampleTests
 
         var compiler = new JaktnatCompiler();
 
-        var assembly = compiler.CompileText(contents);
+        var assemblyName = Path.GetFileNameWithoutExtension(filePath);
+        var assembly = compiler.CompileText(assemblyName, contents);
 
-        var programType = assembly.GetType("Jaktnat.Output.Program");
+        var programType = assembly.GetType($"{assemblyName}.Program");
 
         if (programType == null)
         {

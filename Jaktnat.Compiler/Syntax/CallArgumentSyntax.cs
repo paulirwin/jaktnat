@@ -11,4 +11,6 @@ public class CallArgumentSyntax : SyntaxNode
     public string? ParameterName { get; }
 
     public SyntaxNode Expression { get; }
+
+    public Type? ArgumentType { get; set; }
 }

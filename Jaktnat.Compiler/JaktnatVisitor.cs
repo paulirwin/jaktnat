@@ -85,6 +85,46 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             return new LiteralExpressionSyntax(str.GetText()[1..^1]);
         }
 
+        var number = context.number();
+
+        if (number != null)
+        {
+            return VisitNumber(number);
+        }
+
+        return null;
+    }
+
+    public override SyntaxNode? VisitNumber(JaktnatParser.NumberContext context)
+    {
+        var suffix = context.numberSuffix();
+
+        if (suffix != null)
+        {
+            var suffixText = suffix.GetText();
+
+            throw new NotImplementedException($"Need to implement number suffix for {suffixText}");
+        }
+
+        var floating = context.FLOATING();
+
+        if (floating != null)
+        {
+            var value = double.Parse(context.GetText().Replace("_", ""));
+
+            return new LiteralExpressionSyntax(value);
+        }
+
+        var integer = context.INTEGER();
+
+        if (integer != null)
+        {
+            var value = long.Parse(context.GetText().Replace("_", ""));
+
+            // TODO: implement logic to scale down to i32/etc?
+            return new LiteralExpressionSyntax(value);
+        }
+
         return null;
     }
 }
