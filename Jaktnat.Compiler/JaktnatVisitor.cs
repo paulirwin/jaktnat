@@ -40,6 +40,9 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         foreach (var child in context.children)
         {
+            if (child.GetText() is "{" or "}")
+                continue;
+
             var childNode = Visit(child);
 
             if (childNode != null)

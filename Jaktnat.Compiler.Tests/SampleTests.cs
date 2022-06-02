@@ -26,7 +26,21 @@ public class SampleTests
         var compiler = new JaktnatCompiler();
 
         var assemblyName = Path.GetFileNameWithoutExtension(filePath);
-        var assembly = compiler.CompileText(assemblyName, contents);
+        Assembly assembly;
+
+        try
+        {
+            assembly = compiler.CompileText(assemblyName, contents);
+        }
+        catch
+        {
+            if (expectation.Error == null)
+            {
+                throw;
+            }
+
+            return;
+        }
 
         var programType = assembly.GetType($"{assemblyName}.Program");
 
@@ -46,13 +60,29 @@ public class SampleTests
 
         Console.SetOut(sw);
 
-        mainMethod.Invoke(null, new object[] { Array.Empty<string>() });
+        try
+        {
+            mainMethod.Invoke(null, new object[] { Array.Empty<string>() });
+        }
+        catch
+        {
+            if (expectation.Error == null)
+            {
+                throw;
+            }
+
+            return;
+        }
 
         var output = sw.ToString().ReplaceLineEndings("\n");
 
         if (expectation.Output != null)
         {
             Assert.Equal(expectation.Output, output);
+        }
+        else if (expectation.Error != null)
+        {
+            throw new InvalidOperationException("Expected an error, but app ran successfully");
         }
     }
 
@@ -91,6 +121,12 @@ public class SampleTests
                 {
                     throw new InvalidOperationException("Unable to parse output expectation as a string");
                 }
+            }
+            else if (line.StartsWith("error: "))
+            {
+                line = line["error: ".Length..];
+
+                expectation.Error = line; // TODO: validate error message
             }
         }
 

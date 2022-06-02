@@ -31,6 +31,8 @@ public class JaktnatCompiler
         var parser = new JaktnatParser(new CommonTokenStream(lexer));
         var visitor = new JaktnatVisitor();
 
+        parser.ErrorHandler = new BailErrorStrategy();
+
         var parserOutput = visitor.Visit(parser.file());
 
         if (parserOutput is not CompilationUnitSyntax compilationUnit)

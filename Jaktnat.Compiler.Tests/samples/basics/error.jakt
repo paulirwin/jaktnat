@@ -1,0 +1,6 @@
+﻿/// Expect:
+/// - error: "unknown character"
+
+function main() {
+    !@#$!@@#%#$@
+}

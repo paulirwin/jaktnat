@@ -48,3 +48,5 @@ fragment MINUS: '-';
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 
 WHITESPACE: [ \n\r\t]+ -> channel(HIDDEN);
+
+GARBAGE: . ;
