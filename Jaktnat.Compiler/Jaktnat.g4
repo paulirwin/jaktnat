@@ -8,11 +8,17 @@ function: 'function' NAME LPAREN RPAREN block;
 
 block: LCURLY statement* RCURLY;
 
-statement: block | expression | ifStatement;
+statement: block | expression | ifStatement | letStatement;
 
 ifStatement: 'if' expression block;
 
-expression: operand | literal;
+letStatement: 'let' variableDeclaration EQUAL expression;
+
+variableDeclaration: MUTABLE? NAME variableDeclarationType?;
+
+variableDeclarationType: COLON NAME;
+
+expression: operand | literal | identifier;
 
 literal: number | STRING | TRUE | FALSE;
 
@@ -22,10 +28,13 @@ numberSuffix: ('f32' | 'f64' | 'u8' | 'u16' | 'u32' | 'u64' | 'uz' | 'i8' | 'i16
 
 operand: call;
 
+identifier: NAME;
+
 call: NAME LPAREN callArgument* RPAREN;
 
 callArgument: expression COMMA?;
 
+MUTABLE: 'mutable';
 TRUE: 'true';
 FALSE: 'false';
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
@@ -40,6 +49,8 @@ RPAREN: ')';
 LCURLY: '{';
 RCURLY: '}';
 COMMA: ',';
+EQUAL: '=';
+COLON: ':';
 //EOL: '\n';
 
 fragment NUMBER_DIGIT: [0-9_];

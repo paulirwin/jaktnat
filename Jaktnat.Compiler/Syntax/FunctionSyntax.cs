@@ -1,14 +1,12 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class FunctionSyntax : SyntaxNode
+public class FunctionSyntax : BodySyntax
 {
-    public FunctionSyntax(string name, SyntaxNode body)
+    public FunctionSyntax(string name, BlockSyntax body)
+        : base(body)
     {
         Name = name;
-        Body = body;
     }
 
     public string Name { get; }
-
-    public SyntaxNode Body { get; }
 }

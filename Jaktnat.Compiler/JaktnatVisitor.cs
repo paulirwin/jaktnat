@@ -24,9 +24,8 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     public override SyntaxNode? VisitFunction(JaktnatParser.FunctionContext context)
     {
         var name = context.NAME().GetText();
-        var body = VisitBlock(context.block());
-
-        if (body == null)
+        
+        if (VisitBlock(context.block()) is not BlockSyntax body)
         {
             throw new ParserError("Incomplete function", context.SourceInterval);
         }
@@ -157,5 +156,47 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
 
         return new IfSyntax(cond, block);
+    }
+
+    public override SyntaxNode? VisitLetStatement(JaktnatParser.LetStatementContext context)
+    {
+        if (VisitVariableDeclaration(context.variableDeclaration()) is not VariableDeclarationSyntax variableDeclaration)
+        {
+            throw new ParserError("Unable to parse variable declaration", context.SourceInterval);
+        }
+
+        if (VisitExpression(context.expression()) is not ExpressionSyntax initializer)
+        {
+            throw new ParserError("Unable to parse variable initialization expression", context.SourceInterval);
+        }
+
+        // HACK: just re-use this node type
+        variableDeclaration.InitializerExpression = initializer;
+
+        return variableDeclaration;
+    }
+
+    public override SyntaxNode? VisitVariableDeclaration(JaktnatParser.VariableDeclarationContext context)
+    {
+        var mutable = context.MUTABLE() != null;
+
+        var name = context.NAME().GetText();
+
+        var typeDecl = context.variableDeclarationType();
+        string? typeName = null;
+
+        if (typeDecl != null)
+        {
+            typeName = typeDecl.NAME().GetText();
+        }
+
+        return new VariableDeclarationSyntax(name, typeName, mutable);
+    }
+
+    public override SyntaxNode? VisitIdentifier(JaktnatParser.IdentifierContext context)
+    {
+        var name = context.NAME().GetText();
+
+        return new IdentifierExpressionSyntax(name);
     }
 }

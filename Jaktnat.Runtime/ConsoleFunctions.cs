@@ -23,43 +23,22 @@ public static class ConsoleFunctions
     }
 
     [FreeFunction("println")]
-    public static void Print(string format, object value)
+    public static void Print(string format, object arg)
     {
-        PrintInternal(format, new[] { value }, false);
+        PrintInternal(format, new[] { arg }, false);
     }
 
-    private static void PrintInternal(string format, object[] values, bool newline)
+    private static void PrintInternal(string format, object[] args, bool newline)
     {
-        var sb = new StringBuilder();
-        int valueIndex = 0;
-
-        for (int i = 0; i < format.Length; i++)
-        {
-            char c = format[i];
-
-            if (c == '{' && format[i + 1] == '}')
-            {
-                var value = values[valueIndex++] switch
-                {
-                    double d => d.ToString("0.######"),
-                    float f => f.ToString("0.######"),
-                    object o => o
-                };
-
-                sb.Append(value);
-                i++;
-            }
-            else
-            {
-                sb.Append(c);
-            }
-        }
+        var formatted = StringFunctions.FormatInternal(format, args);
 
         if (newline)
         {
-            sb.Append(Environment.NewLine);
+            Console.WriteLine(formatted);
         }
-
-        Console.Write(sb.ToString());
+        else
+        {
+            Console.Write(formatted);
+        }
     }
 }

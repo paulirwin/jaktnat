@@ -3,11 +3,10 @@
 public class LiteralExpressionSyntax : ExpressionSyntax
 {
     public LiteralExpressionSyntax(object value)
+        : base(value.GetType())
     {
         Value = value;
     }
 
     public object Value { get; }
-
-    public Type ExpressionType => Value.GetType(); // TODO: support null somehow?
 }

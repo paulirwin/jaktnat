@@ -21,7 +21,7 @@ internal static class NameResolutionEngine
         else if (node is IfSyntax ifSyntax)
         {
             Resolve(context, ifSyntax.Condition);
-            Resolve(context, ifSyntax.Block);
+            Resolve(context, ifSyntax.Body);
         }
         else if (node is CallSyntax call)
         {
@@ -29,7 +29,7 @@ internal static class NameResolutionEngine
             
             foreach (var argument in call.Arguments)
             {
-                argument.ArgumentType = ResolveType(argument.Expression);
+                Resolve(context, argument);
             }
 
             call.MatchedMethod = ResolveOverloads(call);
@@ -37,6 +37,55 @@ internal static class NameResolutionEngine
             if (call.MatchedMethod == null)
             {
                 throw new CompilerError($"Unable to resolve method overload for {call.Name}");
+            }
+            else
+            {
+                call.ExpressionType = call.MatchedMethod.ReturnType;
+            }
+        }
+        else if (node is CallArgumentSyntax argument)
+        {
+            Resolve(context, argument.Expression);
+            argument.ArgumentType = argument.Expression.ExpressionType;
+        }
+        else if (node is VariableDeclarationSyntax varDecl)
+        {
+            if (varDecl.ParentBlock == null)
+            {
+                throw new CompilerError("Cannot define a variable outside of a block");
+            }
+
+            if (varDecl.ParentBlock.Variables.ContainsKey(varDecl.Name))
+            {
+                throw new CompilerError($"Variable '{varDecl.Name}' has already been declared in this scope");
+            }
+
+            if (varDecl.InitializerExpression != null)
+            {
+                Resolve(context, varDecl.InitializerExpression);
+                varDecl.Type = varDecl.InitializerExpression.ExpressionType;
+                varDecl.ParentBlock.Variables.Add(varDecl.Name, varDecl);
+            }
+
+            if (varDecl.TypeName != null)
+            {
+                // TODO: resolve explicit type
+            }
+        }
+        else if (node is IdentifierExpressionSyntax identifier)
+        {
+            if (identifier.ParentBlock == null)
+            {
+                throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
+            }
+
+            if (identifier.ParentBlock.TryResolveVariable(identifier.Name, out varDecl))
+            {
+                identifier.ExpressionType = varDecl.Type;
+            }
+            else
+            {
+                throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
             }
         }
     }
@@ -87,14 +136,5 @@ internal static class NameResolutionEngine
         }
 
         return true;
-    }
-
-    private static Type? ResolveType(SyntaxNode node)
-    {
-        return node switch
-        {
-            LiteralExpressionSyntax literal => literal.Value.GetType(),
-            _ => null,
-        };
     }
 }

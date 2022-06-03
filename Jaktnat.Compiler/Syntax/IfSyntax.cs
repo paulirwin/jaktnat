@@ -1,14 +1,12 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class IfSyntax : SyntaxNode
+public class IfSyntax : BodySyntax
 {
-    public IfSyntax(ExpressionSyntax condition, BlockSyntax block)
+    public IfSyntax(ExpressionSyntax condition, BlockSyntax body)
+        : base(body)
     {
         Condition = condition;
-        Block = block;
     }
 
     public ExpressionSyntax Condition { get; }
-    
-    public BlockSyntax Block { get; }
 }

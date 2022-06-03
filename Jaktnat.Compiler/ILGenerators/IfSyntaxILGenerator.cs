@@ -13,7 +13,7 @@ internal static class IfSyntaxILGenerator
         var elseLabel = il.Create(OpCodes.Nop);
         il.Append(il.Create(OpCodes.Brfalse, elseLabel));
 
-        BlockILGenerator.GenerateBlock(context, il, ifSyntax.Block);
+        BlockILGenerator.GenerateBlock(context, il, ifSyntax.Body);
 
         il.Append(elseLabel);
 

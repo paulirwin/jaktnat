@@ -18,10 +18,13 @@ public class JaktnatCompiler
         // Phase 1: lexing and parsing
         var compilationUnit = ParseProgram(contents);
 
-        // Phase 2: name, type, and overload resolution
+        // Phase 2: scope resolution
+        ScopeResolutionEngine.ResolveScopes(compilationUnit, null);
+
+        // Phase 3: name, type, and overload resolution
         NameResolutionEngine.Resolve(context, compilationUnit);
 
-        // Phase 3: assembly generation
+        // Phase 4: assembly generation
         return AssemblyGenerator.CompileAssembly(context, assemblyName, compilationUnit);
     }
     
