@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="samples\basics\bubble_sort.jakt" />
     <None Remove="samples\basics\comments.jakt" />
     <None Remove="samples\basics\error.jakt" />
     <None Remove="samples\basics\float_literals.jakt" />
@@ -19,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="samples\basics\bubble_sort.jakt" />
     <EmbeddedResource Include="samples\basics\error.jakt" />
     <EmbeddedResource Include="samples\basics\float_literals.jakt" />
   </ItemGroup>

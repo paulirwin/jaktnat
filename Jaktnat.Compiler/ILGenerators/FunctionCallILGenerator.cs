@@ -10,7 +10,7 @@ internal static class FunctionCallILGenerator
     {
         if (callSyntax.MatchedMethod is not { } method)
         {
-            throw new CompilerError($"Unable to resolve function \"{callSyntax.Name}\"");
+            throw new CompilerError($"Unable to resolve function \"{callSyntax.Target}\"");
         }
 
         var methodRef = il.Body.Method.DeclaringType.Module.ImportReference(method);

@@ -3,98 +3,80 @@ using Jaktnat.Compiler.Syntax;
 
 namespace Jaktnat.Compiler.Reflection;
 
-internal static class NameResolutionEngine
+internal class NameResolutionEngine : 
+    ISyntaxVisitor<CallArgumentSyntax>,
+    ISyntaxVisitor<VariableDeclarationSyntax>,
+    ISyntaxVisitor<IdentifierExpressionSyntax>,
+    ISyntaxVisitor<CallSyntax>
 {
-    public static void Resolve(CompilationContext context, SyntaxNode node)
+    public void Visit(CompilationContext context, CallArgumentSyntax node)
     {
-        if (node is CompositeSyntax composite)
-        {
-            foreach (var child in composite.Children)
-            {
-                Resolve(context, child);
-            }
-        }
-        else if (node is FunctionSyntax function)
-        {
-            Resolve(context, function.Body);
-        }
-        else if (node is IfSyntax ifSyntax)
-        {
-            Resolve(context, ifSyntax.Condition);
-            Resolve(context, ifSyntax.Body);
-        }
-        else if (node is CallSyntax call)
-        {
-            call.PossibleMatchedMethods = FreeFunctionResolver.Resolve(context, call.Name);
-            
-            foreach (var argument in call.Arguments)
-            {
-                Resolve(context, argument);
-            }
+        node.ArgumentType = node.Expression.ExpressionType;
+    }
 
-            call.MatchedMethod = ResolveOverloads(call);
-
-            if (call.MatchedMethod == null)
-            {
-                throw new CompilerError($"Unable to resolve method overload for {call.Name}");
-            }
-            else
-            {
-                call.ExpressionType = call.MatchedMethod.ReturnType;
-            }
-        }
-        else if (node is CallArgumentSyntax argument)
+    public void Visit(CompilationContext context, VariableDeclarationSyntax varDecl)
+    {
+        if (varDecl.ParentBlock == null)
         {
-            Resolve(context, argument.Expression);
-            argument.ArgumentType = argument.Expression.ExpressionType;
+            throw new CompilerError("Cannot define a variable outside of a block");
         }
-        else if (node is VariableDeclarationSyntax varDecl)
+
+        if (varDecl.ParentBlock.Variables.ContainsKey(varDecl.Name))
         {
-            if (varDecl.ParentBlock == null)
-            {
-                throw new CompilerError("Cannot define a variable outside of a block");
-            }
-
-            if (varDecl.ParentBlock.Variables.ContainsKey(varDecl.Name))
-            {
-                throw new CompilerError($"Variable '{varDecl.Name}' has already been declared in this scope");
-            }
-
-            if (varDecl.InitializerExpression != null)
-            {
-                Resolve(context, varDecl.InitializerExpression);
-                varDecl.Type = varDecl.InitializerExpression.ExpressionType;
-                varDecl.ParentBlock.Variables.Add(varDecl.Name, varDecl);
-            }
-
-            if (varDecl.TypeName != null)
-            {
-                // TODO: resolve explicit type
-            }
+            throw new CompilerError($"Variable '{varDecl.Name}' has already been declared in this scope");
         }
-        else if (node is IdentifierExpressionSyntax identifier)
-        {
-            if (identifier.ParentBlock == null)
-            {
-                throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
-            }
 
-            if (identifier.ParentBlock.TryResolveVariable(identifier.Name, out varDecl))
-            {
-                identifier.ExpressionType = varDecl.Type;
-            }
-            else
-            {
-                throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
-            }
+        if (varDecl.InitializerExpression != null)
+        {
+            varDecl.Type = varDecl.InitializerExpression.ExpressionType;
+            varDecl.ParentBlock.Variables.Add(varDecl.Name, varDecl);
+        }
+
+        if (varDecl.TypeName != null)
+        {
+            // TODO: resolve explicit type
         }
     }
 
-    private static MethodInfo? ResolveOverloads(CallSyntax call)
+    public void Visit(CompilationContext context, IdentifierExpressionSyntax identifier)
+    {
+        if (identifier.ParentBlock == null)
+        {
+            throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
+        }
+
+        if (identifier.ParentBlock.TryResolveVariable(identifier.Name, out var varDecl))
+        {
+            identifier.ExpressionType = varDecl.Type;
+            identifier.Target = varDecl;
+        }
+        else if (FreeFunctionResolver.Resolve(context, identifier.Name) is { Count: > 0 } methods)
+        {
+            identifier.ExpressionType = typeof(MethodInfo);
+            identifier.Target = methods;
+        }
+        else
+        {
+            throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
+        }
+    }
+
+    public void Visit(CompilationContext context, CallSyntax node)
+    {
+        if (node.Target is IdentifierExpressionSyntax { Target: IList<MethodInfo> methods })
+        {
+            node.PossibleMatchedMethods = methods;
+        }
+
+        node.MatchedMethod = ResolveOverloads(node);
+        node.ExpressionType = node.MatchedMethod.ReturnType;
+    }
+
+    private static MethodInfo ResolveOverloads(CallSyntax call)
     {
         if (call.PossibleMatchedMethods == null)
         {
-            return null;
+            throw new InvalidOperationException("Overload resolution called after name resolution");
         }
 
         var argTypes = call.Arguments.Select(i => i.ArgumentType).ToArray();
@@ -113,28 +95,34 @@ internal static class NameResolutionEngine
             }
         }
 
-        return null;
+        throw new CompilerError($"Unable to resolve overload. Possible matches: {string.Join(", ", call.PossibleMatchedMethods)}");
     }
 
-    private static bool ParameterTypesAreCompatible(IReadOnlyList<Type> methodTypes, IReadOnlyList<Type?> expectedTypes)
+    private static bool ParameterTypesAreCompatible(IReadOnlyList<Type> parameterTypes, IReadOnlyList<Type?> argumentTypes)
     {
         // TODO: support params
-        if (methodTypes.Count != expectedTypes.Count)
+        if (parameterTypes.Count != argumentTypes.Count)
         {
             return false;
         }
 
-        for (var index = 0; index < methodTypes.Count; index++)
+        for (var index = 0; index < parameterTypes.Count; index++)
         {
-            var methodType = methodTypes[index];
-            var expectedType = expectedTypes[index];
+            var parameterType = parameterTypes[index];
+            var argumentType = argumentTypes[index];
 
-            if (expectedType == null || !methodType.IsAssignableFrom(expectedType))
+            if (argumentType == null || !ParameterTypeIsCompatible(parameterType, argumentType))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static bool ParameterTypeIsCompatible(Type parameterType, Type argumentType)
+    {
+        return parameterType.IsAssignableFrom(argumentType)
+               || (parameterType == typeof(object) && argumentType.IsValueType);
     }
 }

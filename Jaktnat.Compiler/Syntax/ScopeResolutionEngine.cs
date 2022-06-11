@@ -32,6 +32,7 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(callArgumentSyntax.Expression, parentBlock);
                 break;
             case CallSyntax callSyntax:
+                ResolveScopes(callSyntax.Target, parentBlock);
                 foreach (var argument in callSyntax.Arguments)
                 {
                     ResolveScopes(argument, parentBlock);

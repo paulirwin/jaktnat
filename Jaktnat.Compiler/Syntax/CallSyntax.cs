@@ -4,13 +4,13 @@ namespace Jaktnat.Compiler.Syntax;
 
 public class CallSyntax : ExpressionSyntax
 {
-    public CallSyntax(string name, IList<CallArgumentSyntax> arguments)
+    public CallSyntax(ExpressionSyntax target, IList<CallArgumentSyntax> arguments)
     {
-        Name = name;
+        Target = target;
         Arguments = arguments;
     }
 
-    public string Name { get; }
+    public ExpressionSyntax Target { get; }
 
     public IList<CallArgumentSyntax> Arguments { get; }
 

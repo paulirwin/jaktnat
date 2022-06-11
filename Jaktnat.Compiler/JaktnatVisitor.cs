@@ -27,7 +27,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         
         if (VisitBlock(context.block()) is not BlockSyntax body)
         {
-            throw new ParserError("Incomplete function", context.SourceInterval);
+            throw new ParserError("Incomplete function", context.Start);
         }
 
         return new FunctionSyntax(name, body);
@@ -53,16 +53,27 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return block;
     }
 
-    public override SyntaxNode? VisitCall(JaktnatParser.CallContext context)
+    public override SyntaxNode? VisitPrimaryExpr(JaktnatParser.PrimaryExprContext context)
     {
-        var name = context.NAME().GetText();
-        var args = context.callArgument()
-            .Select(VisitCallArgument)
-            .Where(i => i != null)
-            .Cast<CallArgumentSyntax>()
-            .ToList();
+        var call = context.call();
 
-        return new CallSyntax(name, args);
+        if (call != null)
+        {
+            if (Visit(context.primaryExpr()) is not ExpressionSyntax target)
+            {
+                throw new ParserError("Invalid call syntax", context.start);
+            }
+
+            var args = call.callArgument()
+                .Select(VisitCallArgument)
+                .Where(i => i != null)
+                .Cast<CallArgumentSyntax>()
+                .ToList();
+
+            return new CallSyntax(target, args);
+        }
+
+        return base.VisitPrimaryExpr(context);
     }
 
     public override SyntaxNode? VisitCallArgument(JaktnatParser.CallArgumentContext context)
@@ -71,7 +82,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         if (VisitExpression(context.expression()) is not ExpressionSyntax expr)
         {
-            throw new ParserError("Unable to parse call argument expression", context.SourceInterval);
+            throw new ParserError("Unable to parse call argument expression", context.Start);
         }
 
         return new CallArgumentSyntax(name, expr);
@@ -147,12 +158,12 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     {
         if (VisitExpression(context.expression()) is not ExpressionSyntax cond)
         {
-            throw new ParserError("Unable to parse if condition", context.SourceInterval);
+            throw new ParserError("Unable to parse if condition", context.Start);
         }
 
         if (VisitBlock(context.block()) is not BlockSyntax block)
         {
-            throw new ParserError("Unable to parse if block", context.SourceInterval);
+            throw new ParserError("Unable to parse if block", context.Start);
         }
 
         return new IfSyntax(cond, block);
@@ -162,12 +173,12 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     {
         if (VisitVariableDeclaration(context.variableDeclaration()) is not VariableDeclarationSyntax variableDeclaration)
         {
-            throw new ParserError("Unable to parse variable declaration", context.SourceInterval);
+            throw new ParserError("Unable to parse variable declaration", context.Start);
         }
 
         if (VisitExpression(context.expression()) is not ExpressionSyntax initializer)
         {
-            throw new ParserError("Unable to parse variable initialization expression", context.SourceInterval);
+            throw new ParserError("Unable to parse variable initialization expression", context.Start);
         }
 
         // HACK: just re-use this node type
@@ -187,7 +198,9 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         if (typeDecl != null)
         {
-            typeName = typeDecl.NAME().GetText();
+            var type = typeDecl.type();
+
+            typeName = type.typeName().NAME().GetText();
         }
 
         return new VariableDeclarationSyntax(name, typeName, mutable);

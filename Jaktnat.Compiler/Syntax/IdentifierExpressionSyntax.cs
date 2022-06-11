@@ -1,6 +1,6 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class IdentifierExpressionSyntax : ExpressionSyntax
+public class IdentifierExpressionSyntax : ExpressionSyntax, IHasTarget
 {
     public IdentifierExpressionSyntax(string name)
     {
@@ -8,4 +8,6 @@ public class IdentifierExpressionSyntax : ExpressionSyntax
     }
 
     public string Name { get; }
+
+    public object? Target { get; set; }
 }
