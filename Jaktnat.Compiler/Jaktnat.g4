@@ -4,7 +4,9 @@ file: syntax* EOF;
 
 syntax: function;
 
-function: FUNCTION NAME LPAREN parameter* RPAREN block;
+function: FUNCTION NAME LPAREN parameterList? RPAREN block;
+
+parameterList: parameter (COMMA parameter)*;
 
 parameter: ANONYMOUS? (thisParameter | namedParameter);
 
@@ -33,28 +35,30 @@ variableDeclarationType: COLON type;
 
 expression: 
     primaryExpr
-    | prefixUnaryOp=unaryOperator expression
-    | expression postfixUnaryOp=unaryOperator
-    | expression binaryOp=binaryOperator expression
-    | expression assignment=EQUAL expression
-    | call
-    | parenthesizedExpression 
-    | indexerAccess;
+    | prefixUnaryOperator expression
+    | expression postfixUnaryOperator
+    | expression typeCastOperator type
+    | expression IS type
+    | expression binaryOperator expression
+    | expression DOT identifier
+    | expression call
+    | expression indexerAccess
+    | parenthesizedExpression;
 
 primaryExpr:
     operand
     | typeName
-    | primaryExpr call;
+    | array;
 
 expressionList: expression (COMMA expression)*;
 
 parenthesizedExpression: LPAREN expression RPAREN;
 
-indexerAccess: operand LBRACKET expression RBRACKET;
+indexerAccess: LBRACKET expression RBRACKET;
 
-literal: number | STRING | TRUE | FALSE | arrayLiteral;
+literal: number | STRING | TRUE | FALSE;
 
-arrayLiteral: LBRACKET expressionList RBRACKET;
+array: LBRACKET expressionList RBRACKET;
 
 number: (FLOATING | INTEGER) numberSuffix?;
 
@@ -76,13 +80,60 @@ callArgument: argumentName? expression COMMA?;
 
 argumentName: NAME COLON;
 
-binaryOperator: GTE | GT | LTE | LT | MINUS | PLUS | ASTERISK | DIVIDE | MODULO | ASBANG | AS | DOT;
+binaryOperator: 
+    GTE 
+    | GT 
+    | LTE 
+    | LT 
+    | MINUS 
+    | PLUS 
+    | ASTERISK 
+    | DIVIDE 
+    | MODULO 
+    | EQUALEQUAL 
+    | NOTEQUAL 
+    | EQUAL 
+    | AND 
+    | OR
+    | AMPERSAND
+    | PIPE
+    | CARET
+    | DOUBLELEFT
+    | TRIPLELEFT
+    | DOUBLERIGHT
+    | TRIPLERIGHT
+    | PLUSEQUAL
+    | MINUSEQUAL
+    | ASTERISKEQUAL
+    | DIVIDEEQUAL
+    | MODULOEQUAL
+    | AMPERSANDEQUAL
+    | PIPEEQUAL
+    | CARETEQUAL
+    | DOUBLELEFTEQUAL
+    | DOUBLERIGHTEQUAL
+    | DOUBLEQUESTION
+    | DOUBLEQUESTIONEQUAL;
 
-unaryOperator: PLUSPLUS | MINUSMINUS;
+typeCastOperator: ASBANG | ASQUESTION; 
+
+prefixUnaryOperator: 
+    PLUSPLUS 
+    | MINUSMINUS
+    | MINUS
+    | ASTERISK
+    | AMPERSAND
+    | NOT
+    | TILDE;
+
+postfixUnaryOperator:
+    PLUSPLUS
+    | MINUSMINUS;
 
 NUMBER_SUFFIX: ('f32' | 'f64' | 'u8' | 'u16' | 'u32' | 'u64' | 'uz' | 'i8' | 'i16' | 'i32' | 'i64');
 ASBANG: 'as!';
-AS: 'as';
+ASQUESTION: 'as?';
+IS: 'is';
 IF: 'if';
 LET: 'let';
 FUNCTION: 'function';
@@ -92,6 +143,9 @@ ANONYMOUS: 'anonymous';
 MUTABLE: 'mutable';
 TRUE: 'true';
 FALSE: 'false';
+AND: 'and';
+OR: 'or';
+NOT: 'not';
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;
 
@@ -110,8 +164,31 @@ RCURLY: '}';
 LBRACKET: '[';
 RBRACKET: ']';
 COMMA: ',';
+EQUALEQUAL: '==';
+NOTEQUAL: '!=';
 EQUAL: '=';
 COLON: ':';
+TILDE: '~';
+EXCLAMATION: '!';
+DOUBLELEFTEQUAL: '<<=';
+DOUBLERIGHTEQUAL: '>>=';
+DOUBLEQUESTIONEQUAL: '??=';
+DOUBLEQUESTION: '??';
+TRIPLELEFT: '<<<';
+DOUBLELEFT: '<<';
+TRIPLERIGHT: '>>>';
+DOUBLERIGHT: '>>';
+PLUSEQUAL: '+=';
+MINUSEQUAL: '-=';
+ASTERISKEQUAL: '*=';
+DIVIDEEQUAL: '/=';
+MODULOEQUAL: '%=';
+AMPERSANDEQUAL: '&=';
+PIPEEQUAL: '|=';
+CARETEQUAL: '^=';
+AMPERSAND: '&';
+PIPE: '|';
+CARET: '^';
 GT: '>';
 GTE: '>=';
 LT: '<';

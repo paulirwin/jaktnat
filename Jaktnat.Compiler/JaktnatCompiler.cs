@@ -13,11 +13,11 @@ public class JaktnatCompiler
     public Assembly CompileText(string assemblyName, string contents)
     {
         var runtimeAssembly = typeof(FreeFunctionAttribute).Assembly;
-
-        var context = new CompilationContext(runtimeAssembly);
-
+        
         // Phase 1: lexing and parsing
         var compilationUnit = ParseProgram(contents);
+        var context = new CompilationContext(compilationUnit, runtimeAssembly);
+        FreeFunctionResolver.PopulateGlobals(context);
 
         // Phase 2: scope resolution
         ScopeResolutionEngine.ResolveScopes(compilationUnit, null);

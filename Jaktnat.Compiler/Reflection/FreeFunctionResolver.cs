@@ -1,15 +1,13 @@
 ﻿using System.Reflection;
+using Jaktnat.Compiler.ObjectModel;
 using Jaktnat.Runtime;
 
 namespace Jaktnat.Compiler.Reflection;
 
 internal static class FreeFunctionResolver
 {
-    public static IList<MethodInfo> Resolve(CompilationContext context, string name)
+    public static void PopulateGlobals(CompilationContext context)
     {
-        var matches = new List<MethodInfo>();
-
-        // FIXME: cache this
         foreach (var assembly in context.LoadedAssemblies)
         {
             var types = assembly.GetTypes().Where(i => i.IsClass && i.IsVisible);
@@ -17,13 +15,21 @@ internal static class FreeFunctionResolver
             foreach (var type in types)
             {
                 var methods = type.GetMethods(BindingFlags.Static | BindingFlags.Public)
-                    .Where(i => i.GetCustomAttribute<FreeFunctionAttribute>() is { Name: string freeName } 
-                                && freeName.Equals(name));
+                    .Select(i => new
+                    {
+                        Attribute = i.GetCustomAttribute<FreeFunctionAttribute>(),
+                        Method = i,
+                    })
+                    .Where(i => i.Attribute != null);
 
-                matches.AddRange(methods);
+                foreach (var method in methods)
+                {
+                    var name = method.Attribute!.Name;
+                    var newFunction = new RuntimeMethodInfoFreeFunction(method.Method);
+
+                    context.CompilationUnit.DeclareFreeFunction(name, newFunction);
+                }
             }
         }
-
-        return matches;
     }
 }

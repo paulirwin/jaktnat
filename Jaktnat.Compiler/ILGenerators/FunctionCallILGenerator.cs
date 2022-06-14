@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Jaktnat.Compiler.ObjectModel;
 using Jaktnat.Compiler.Syntax;
 using Mono.Cecil.Cil;
 
@@ -8,7 +9,8 @@ internal static class FunctionCallILGenerator
 {
     public static void GenerateFunctionCall(CompilationContext context, ILProcessor il, CallSyntax callSyntax)
     {
-        if (callSyntax.MatchedMethod is not { } method)
+        // TODO: support declared functions
+        if (callSyntax.MatchedMethod is not RuntimeMethodInfoFreeFunction { Method: MethodInfo method })
         {
             throw new CompilerError($"Unable to resolve function \"{callSyntax.Target}\"");
         }

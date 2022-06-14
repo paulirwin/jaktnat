@@ -25,6 +25,10 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(ifSyntax.Condition, parentBlock);
                 ResolveScopes(ifSyntax.Body, parentBlock);
                 break;
+            case WhileSyntax whileSyntax:
+                ResolveScopes(whileSyntax.Condition, parentBlock);
+                ResolveScopes(whileSyntax.Body, parentBlock);
+                break;
             case FunctionSyntax functionSyntax:
                 ResolveScopes(functionSyntax.Body, parentBlock);
                 break;
@@ -49,6 +53,30 @@ internal static class ScopeResolutionEngine
                     throw new InvalidOperationException("Cannot define a variable without a parent block");
                 }
                 
+                break;
+            case IndexerAccessExpression indexer:
+                ResolveScopes(indexer.Target, parentBlock);
+                ResolveScopes(indexer.Argument, parentBlock);
+                break;
+            case ArraySyntax array:
+                ResolveScopes(array.ItemsList, parentBlock);
+                break;
+            case ExpressionListSyntax expList:
+                foreach (var item in expList.Items)
+                {
+                    ResolveScopes(item, parentBlock);
+                }
+
+                break;
+            case UnaryExpressionSyntax unaryExpression:
+                ResolveScopes(unaryExpression.Expression, parentBlock);
+                break;
+            case BinaryExpressionSyntax binaryExpression:
+                ResolveScopes(binaryExpression.Left, parentBlock);
+                ResolveScopes(binaryExpression.Right, parentBlock);
+                break;
+            case ParenthesizedExpressionSyntax parenthesizedExpression:
+                ResolveScopes(parenthesizedExpression.Expression, parentBlock);
                 break;
             case IdentifierExpressionSyntax:
             case LiteralExpressionSyntax:

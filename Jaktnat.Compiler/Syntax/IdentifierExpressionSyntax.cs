@@ -10,4 +10,6 @@ public class IdentifierExpressionSyntax : ExpressionSyntax, IHasTarget
     public string Name { get; }
 
     public object? Target { get; set; }
+
+    public override string ToString() => Name;
 }

@@ -17,7 +17,7 @@ internal static class SyntaxVisitor
 
     private static void VisitInternal<T>(T obj, CompilationContext context, SyntaxNode node)
     {
-        if (node is CompositeSyntax composite)
+        if (node is AggregateSyntax composite)
         {
             foreach (var child in composite.Children)
             {
@@ -26,7 +26,37 @@ internal static class SyntaxVisitor
         }
         else if (node is FunctionSyntax function)
         {
+            if (function.Parameters != null)
+            {
+                VisitInternal(obj, context, function.Parameters);
+            }
             VisitInternal(obj, context, function.Body);
+        }
+        else if (node is ParameterListSyntax parameterList)
+        {
+            foreach (var parameter in parameterList.Parameters)
+            {
+                VisitInternal(obj, context, parameter);
+            }
+        }
+        else if (node is ParameterSyntax parameter)
+        {
+            VisitInternal(obj, context, parameter.TypeIdentifier);
+        }
+        else if (node is ArraySyntax array)
+        {
+            VisitInternal(obj, context, array.ItemsList);
+        }
+        else if (node is ExpressionListSyntax expressionList)
+        {
+            foreach (var item in expressionList.Items)
+            {
+                VisitInternal(obj, context, item);
+            }
+        }
+        else if (node is ArrayTypeIdentifierSyntax arrayType)
+        {
+            VisitInternal(obj, context, arrayType.ElementType);
         }
         else if (node is IfSyntax ifSyntax)
         {
@@ -52,6 +82,29 @@ internal static class SyntaxVisitor
             {
                 VisitInternal(obj, context, varDecl.InitializerExpression);
             }
+        }
+        else if (node is TypeCastSyntax typeCast)
+        {
+            VisitInternal(obj, context, typeCast.Expression);
+            VisitInternal(obj, context, typeCast.Type);
+        }
+        else if (node is TypeCheckSyntax typeCheck)
+        {
+            VisitInternal(obj, context, typeCheck.Expression);
+            VisitInternal(obj, context, typeCheck.Type);
+        }
+        else if (node is UnaryExpressionSyntax unaryExpression)
+        {
+            VisitInternal(obj, context, unaryExpression.Expression);
+        }
+        else if (node is BinaryExpressionSyntax binaryExpression)
+        {
+            VisitInternal(obj, context, binaryExpression.Left);
+            VisitInternal(obj, context, binaryExpression.Right);
+        }
+        else if (node is ParenthesizedExpressionSyntax parenthesizedExpression)
+        {
+            VisitInternal(obj, context, parenthesizedExpression.Expression);
         }
 
         InvokeVisit(obj, context, node);

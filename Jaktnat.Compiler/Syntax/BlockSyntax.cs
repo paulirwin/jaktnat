@@ -1,6 +1,6 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class BlockSyntax : CompositeSyntax
+public class BlockSyntax : AggregateSyntax
 {
     public IDictionary<string, VariableDeclarationSyntax> Variables { get; set; } = new Dictionary<string, VariableDeclarationSyntax>();
 
@@ -18,4 +18,7 @@ public class BlockSyntax : CompositeSyntax
 
         return ParentBlock.TryResolveVariable(name, out variableDeclaration);
     }
+
+    // TODO: support indentation
+    public override string ToString() => $"{{{Environment.NewLine}{string.Join(Environment.NewLine, Children)}{Environment.NewLine}}}";
 }

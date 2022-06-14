@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+﻿using Jaktnat.Compiler.ObjectModel;
 
 namespace Jaktnat.Compiler.Syntax;
 
@@ -14,7 +14,9 @@ public class CallSyntax : ExpressionSyntax
 
     public IList<CallArgumentSyntax> Arguments { get; }
 
-    public IList<MethodInfo>? PossibleMatchedMethods { get; set; }
+    internal IList<FreeFunction>? PossibleMatchedMethods { get; set; }
 
-    public MethodInfo? MatchedMethod { get; set; }
+    internal FreeFunction? MatchedMethod { get; set; }
+
+    public override string ToString() => $"{Target}({string.Join(", ", Arguments)})";
 }

@@ -13,4 +13,6 @@ public class CallArgumentSyntax : SyntaxNode
     public ExpressionSyntax Expression { get; }
 
     public Type? ArgumentType { get; set; }
+
+    public override string ToString() => ParameterName != null ? $"{ParameterName}: {Expression}" : Expression.ToString();
 }

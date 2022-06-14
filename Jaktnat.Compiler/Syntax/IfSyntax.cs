@@ -9,4 +9,6 @@ public class IfSyntax : BodySyntax
     }
 
     public ExpressionSyntax Condition { get; }
+
+    public override string ToString() => $"if {Condition} {Body}";
 }
