@@ -345,9 +345,18 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             return VisitPostfixUnaryExpression(context, postfixUnaryOperator);
         }
 
-        if (context.binaryOperator() is { } binaryOperator)
+        if (context.binaryAddSubtract() != null
+            || context.binaryAssign() != null
+            || context.binaryBitwiseAnd() != null
+            || context.binaryBitwiseOr() != null 
+            || context.binaryBitwiseXor() != null
+            || context.binaryBoolean() != null
+            || context.binaryLogicalAnd() != null
+            || context.binaryMultiplyDivideModulo() != null
+            || context.binaryOrCoalescing() != null
+            || context.binaryShift() != null)
         {
-            return VisitBinaryExpression(context, binaryOperator);
+            return VisitBinaryExpression(context);
         }
 
         if (context.call() is { } call)
@@ -513,8 +522,8 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         return new CallSyntax(target, args!);
     }
-
-    private SyntaxNode VisitBinaryExpression(JaktnatParser.ExpressionContext context, JaktnatParser.BinaryOperatorContext binaryOperator)
+    
+    private SyntaxNode VisitBinaryExpression(JaktnatParser.ExpressionContext context)
     {
         var exprs = context.expression();
 
@@ -533,7 +542,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Unable to parse right side of binary expression", exprs[1].start);
         }
 
-        var op = binaryOperator.GetText() switch
+        var op = context.children[1].GetText() switch
         {
             "+" => BinaryOperator.Add,
             "-" => BinaryOperator.Subtract,
@@ -568,7 +577,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             ">>=" => BinaryOperator.BitwiseRightShiftAssign,
             "??" => BinaryOperator.NoneCoalescing,
             "??=" => BinaryOperator.NoneCoalescingAssign,
-            _ => throw new ParserError($"Unknown binary operator: {binaryOperator.GetText()}", binaryOperator.start),
+            _ => throw new ParserError($"Unknown binary operator: {context.children[1].GetText()}", context.start),
         };
 
         return new BinaryExpressionSyntax(left, op, right);

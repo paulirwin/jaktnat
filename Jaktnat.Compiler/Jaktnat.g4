@@ -42,7 +42,16 @@ expression:
     | expression call
     | expression memberAccess
     | expression indexerAccess
-    | expression binaryOperator expression
+    | expression binaryMultiplyDivideModulo expression  // parser.rs: precedence 100
+    | expression binaryAddSubtract expression           // 90
+    | expression binaryShift expression                 // 85
+    | expression binaryBoolean expression               // 80
+    | expression binaryBitwiseAnd expression            // 73
+    | expression binaryBitwiseXor expression            // 72
+    | expression binaryBitwiseOr expression             // 71
+    | expression binaryLogicalAnd expression            // 70
+    | expression binaryOrCoalescing expression          // 69
+    | expression binaryAssign expression                // 50
     | parenthesizedExpression;
 
 primaryExpr:
@@ -82,24 +91,8 @@ callArgument: argumentName? expression COMMA?;
 
 argumentName: NAME COLON;
 
-binaryOperator: 
-    MINUS 
-    | PLUS 
-    | ASTERISK 
-    | DIVIDE 
-    | MODULO 
-    | EQUALEQUAL 
-    | NOTEQUAL 
-    | EQUAL 
-    | AND 
-    | OR
-    | AMPERSAND
-    | PIPE
-    | CARET
-    | DOUBLELEFT
-    | TRIPLELEFT
-    | DOUBLERIGHT
-    | TRIPLERIGHT
+binaryAssign: 
+    EQUAL
     | PLUSEQUAL
     | MINUSEQUAL
     | ASTERISKEQUAL
@@ -110,12 +103,42 @@ binaryOperator:
     | CARETEQUAL
     | DOUBLELEFTEQUAL
     | DOUBLERIGHTEQUAL
-    | DOUBLEQUESTION
-    | DOUBLEQUESTIONEQUAL
-    | GTE 
+    | DOUBLEQUESTIONEQUAL;
+
+binaryOrCoalescing:
+    OR
+    | DOUBLEQUESTION;
+
+binaryLogicalAnd: AND;
+
+binaryBitwiseOr: PIPE;
+
+binaryBitwiseXor: CARET;
+
+binaryBitwiseAnd: AMPERSAND;
+
+binaryBoolean:
+    GTE 
     | GT 
     | LTE 
-    | LT;
+    | LT
+    | EQUALEQUAL 
+    | NOTEQUAL;
+
+binaryShift:
+    DOUBLELEFT
+    | TRIPLELEFT
+    | DOUBLERIGHT
+    | TRIPLERIGHT;
+
+binaryAddSubtract:
+    MINUS 
+    | PLUS;
+
+binaryMultiplyDivideModulo: 
+    ASTERISK 
+    | DIVIDE 
+    | MODULO;
 
 typeCastOperator: ASBANG | ASQUESTION; 
 
