@@ -39,10 +39,10 @@ expression:
     | expression postfixUnaryOperator
     | expression typeCastOperator type
     | expression IS type
-    | expression binaryOperator expression
-    | expression DOT identifier
     | expression call
+    | expression memberAccess
     | expression indexerAccess
+    | expression binaryOperator expression
     | parenthesizedExpression;
 
 primaryExpr:
@@ -53,6 +53,8 @@ primaryExpr:
 expressionList: expression (COMMA expression)*;
 
 parenthesizedExpression: LPAREN expression RPAREN;
+
+memberAccess: DOT identifier;
 
 indexerAccess: LBRACKET expression RBRACKET;
 
@@ -81,11 +83,7 @@ callArgument: argumentName? expression COMMA?;
 argumentName: NAME COLON;
 
 binaryOperator: 
-    GTE 
-    | GT 
-    | LTE 
-    | LT 
-    | MINUS 
+    MINUS 
     | PLUS 
     | ASTERISK 
     | DIVIDE 
@@ -113,7 +111,11 @@ binaryOperator:
     | DOUBLELEFTEQUAL
     | DOUBLERIGHTEQUAL
     | DOUBLEQUESTION
-    | DOUBLEQUESTIONEQUAL;
+    | DOUBLEQUESTIONEQUAL
+    | GTE 
+    | GT 
+    | LTE 
+    | LT;
 
 typeCastOperator: ASBANG | ASQUESTION; 
 

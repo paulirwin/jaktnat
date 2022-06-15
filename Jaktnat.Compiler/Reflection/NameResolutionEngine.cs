@@ -18,7 +18,9 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<BinaryExpressionSyntax>,
     ISyntaxVisitor<UnaryExpressionSyntax>,
     ISyntaxVisitor<TypeCastSyntax>,
-    ISyntaxVisitor<TypeCheckSyntax>
+    ISyntaxVisitor<TypeCheckSyntax>,
+    ISyntaxVisitor<MemberAccessSyntax>,
+    ISyntaxVisitor<IndexerAccessSyntax>
 {
     public void Visit(CompilationContext context, CallArgumentSyntax node)
     {
@@ -32,7 +34,7 @@ internal class NameResolutionEngine :
             throw new CompilerError("Cannot define a variable outside of a block");
         }
 
-        if (varDecl.ParentBlock.Variables.ContainsKey(varDecl.Name))
+        if (varDecl.ParentBlock.Declarations.ContainsKey(varDecl.Name))
         {
             throw new CompilerError($"Variable '{varDecl.Name}' has already been declared in this scope");
         }
@@ -40,10 +42,14 @@ internal class NameResolutionEngine :
         if (varDecl.InitializerExpression != null)
         {
             varDecl.Type = varDecl.InitializerExpression.ExpressionType;
-            varDecl.ParentBlock.Variables.Add(varDecl.Name, varDecl);
+            varDecl.ParentBlock.Declarations.Add(varDecl.Name, varDecl);
+        }
+        else
+        {
+            throw new NotImplementedException("Variable declaration without initializer expression");
         }
 
-        if (varDecl.TypeName != null)
+        if (varDecl.TypeIdentifier != null)
         {
             // TODO: resolve explicit type
         }
@@ -56,7 +62,27 @@ internal class NameResolutionEngine :
             throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
         }
 
-        if (identifier.ParentBlock.TryResolveVariable(identifier.Name, out var varDecl))
+        if (identifier.ParentTarget != null)
+        {
+            if (identifier.ParentTarget.ExpressionType == null)
+            {
+                throw new CompilerError("Unable to find member on target expression as target hasn't been evaluated properly");
+            }
+
+            var members = identifier.ParentTarget.ExpressionType
+                .GetMembers()
+                .Where(i => i.Name == identifier.Name)
+                .ToList();
+
+            if (members.Count == 0)
+            {
+                throw new CompilerError($"Unable to resolve identifier {identifier.Name} on type {identifier.ParentTarget.ExpressionType}");
+            }
+
+            identifier.ExpressionType = members[0].GetType();
+            identifier.Target = members;
+        }
+        else if (identifier.ParentBlock.TryResolveDeclaration(identifier.Name, out var varDecl))
         {
             identifier.ExpressionType = varDecl.Type;
             identifier.Target = varDecl;
@@ -133,7 +159,7 @@ internal class NameResolutionEngine :
                 else if (call.Arguments.Count > 0 && declaredFunction.FunctionSyntax.Parameters is { } parameters)
                 {
                     var parameterTypes = parameters.Parameters
-                        .Select(i => i.ParameterType).ToArray();
+                        .Select(i => i.Type).ToArray();
 
                     if (parameterTypes.Length == call.Arguments.Count
                         && ParameterTypesAreCompatible(parameterTypes, argTypes))
@@ -211,7 +237,18 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, ParameterSyntax node)
     {
-        node.ParameterType = node.TypeIdentifier.Type;
+        if (node.ParentBlock == null)
+        {
+            throw new CompilerError("Expected parameter to have a block");
+        }
+
+        if (node.TypeIdentifier == null)
+        {
+            throw new CompilerError("Expected type identifier in parameter declaration");
+        }
+
+        node.ParentBlock.Declarations.Add(node.Name, node);
+        node.Type = node.TypeIdentifier.Type;
     }
 
     public void Visit(CompilationContext context, ArraySyntax node)
@@ -311,5 +348,61 @@ internal class NameResolutionEngine :
     public void Visit(CompilationContext context, TypeCheckSyntax node)
     {
         node.ExpressionType = typeof(bool);
+    }
+
+    public void Visit(CompilationContext context, MemberAccessSyntax node)
+    {
+        if (node.Member.Target is not IList<MemberInfo> members)
+        {
+            throw new CompilerError("Member access expression has not been evaluated yet");
+        }
+
+        if (members.Count == 0)
+        {
+            throw new CompilerError("Member access expression has no members");
+        }
+
+        if (members.Count == 1)
+        {
+            if (members[0] is FieldInfo field)
+            {
+                node.ExpressionType = field.FieldType;
+                node.Member.Target = field;
+            }
+            else if (members[0] is PropertyInfo property)
+            {
+                node.ExpressionType = property.PropertyType;
+                node.Member.Target = property;
+            }
+            else if (members[0] is MethodInfo methodInfo)
+            {
+                node.ExpressionType = typeof(MethodInfo);
+            }
+        }
+        else
+        {
+            if (!members.All(i => i is MethodInfo))
+            {
+                throw new CompilerError($"Expected method overloads, but found other types that match member {node.Member.Name}");
+            }
+
+            node.ExpressionType = typeof(MethodInfo);
+        }
+    }
+
+    public void Visit(CompilationContext context, IndexerAccessSyntax node)
+    {
+        if (node.Target.ExpressionType == null)
+        {
+            throw new CompilerError("Indexer access target has not been evaluated yet");
+        }
+        
+        // TODO: support custom indexers
+        if (!node.Target.ExpressionType.IsArray)
+        {
+            throw new CompilerError("Indexer access is currently only supported on array types");
+        }
+
+        node.ExpressionType = node.Target.ExpressionType.GetElementType();
     }
 }

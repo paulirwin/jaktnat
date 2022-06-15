@@ -1,8 +1,8 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class IndexerAccessExpression : ExpressionSyntax
+public class IndexerAccessSyntax : ExpressionSyntax
 {
-    public IndexerAccessExpression(ExpressionSyntax target, ExpressionSyntax argument)
+    public IndexerAccessSyntax(ExpressionSyntax target, ExpressionSyntax argument)
     {
         Target = target;
         Argument = argument;

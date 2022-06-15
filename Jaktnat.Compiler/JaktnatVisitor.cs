@@ -251,17 +251,19 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         var name = context.NAME().GetText();
 
-        var typeDecl = context.variableDeclarationType();
-        string? typeName = null;
+        TypeIdentifierSyntax? type = null;
 
-        if (typeDecl != null)
+        if (context.variableDeclarationType() is { } typeDecl)
         {
-            var type = typeDecl.type();
+            if (Visit(typeDecl.type()) is not TypeIdentifierSyntax typeValue)
+            {
+                throw new ParserError("Unable to parse variable type", typeDecl.start);
+            }
 
-            typeName = type.typeName().NAME().GetText();
+            type = typeValue;
         }
 
-        return new VariableDeclarationSyntax(name, typeName, mutable);
+        return new VariableDeclarationSyntax(name, type, mutable);
     }
 
     public override SyntaxNode? VisitIdentifier(JaktnatParser.IdentifierContext context)
@@ -353,12 +355,39 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             return VisitCallExpression(context, call);
         }
 
+        if (context.memberAccess() is { } memberAccess)
+        {
+            return VisitMemberAccessExpression(context, memberAccess);
+        }
+
         if (context.indexerAccess() is { } indexer)
         {
             return VisitIndexerAccessExpression(context, indexer);
         }
 
         return base.VisitExpression(context);
+    }
+
+    private SyntaxNode VisitMemberAccessExpression(JaktnatParser.ExpressionContext context, JaktnatParser.MemberAccessContext memberAccess)
+    {
+        var exprs = context.expression();
+
+        if (exprs.Length != 1)
+        {
+            throw new ParserError("Unexpected extra expression in member access syntax", memberAccess.start);
+        }
+
+        if (Visit(exprs[0]) is not ExpressionSyntax target)
+        {
+            throw new ParserError("Invalid member access syntax", context.start);
+        }
+
+        if (Visit(memberAccess.identifier()) is not IdentifierExpressionSyntax identifier)
+        {
+            throw new ParserError("Unable to parse member access identifier", context.start);
+        }
+
+        return new MemberAccessSyntax(target, identifier);
     }
 
     private SyntaxNode VisitTypeCheckExpression(JaktnatParser.ExpressionContext context)
@@ -455,7 +484,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Unable to parse indexer access argument", context.start);
         }
 
-        return new IndexerAccessExpression(target, arg);
+        return new IndexerAccessSyntax(target, arg);
     }
 
     private SyntaxNode? VisitCallExpression(JaktnatParser.ExpressionContext context, JaktnatParser.CallContext call)

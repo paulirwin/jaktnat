@@ -2,11 +2,11 @@
 
 public class BlockSyntax : AggregateSyntax
 {
-    public IDictionary<string, VariableDeclarationSyntax> Variables { get; set; } = new Dictionary<string, VariableDeclarationSyntax>();
+    public IDictionary<string, DeclarationSyntax> Declarations { get; set; } = new Dictionary<string, DeclarationSyntax>();
 
-    public bool TryResolveVariable(string name, out VariableDeclarationSyntax variableDeclaration)
+    public bool TryResolveDeclaration(string name, out DeclarationSyntax declaration)
     {
-        if (Variables.TryGetValue(name, out variableDeclaration!))
+        if (Declarations.TryGetValue(name, out declaration!))
         {
             return true;
         }
@@ -16,7 +16,7 @@ public class BlockSyntax : AggregateSyntax
             return false;
         }
 
-        return ParentBlock.TryResolveVariable(name, out variableDeclaration);
+        return ParentBlock.TryResolveDeclaration(name, out declaration);
     }
 
     // TODO: support indentation

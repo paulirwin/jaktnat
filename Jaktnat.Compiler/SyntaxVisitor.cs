@@ -63,6 +63,11 @@ internal static class SyntaxVisitor
             VisitInternal(obj, context, ifSyntax.Condition);
             VisitInternal(obj, context, ifSyntax.Body);
         }
+        else if (node is WhileSyntax whileSyntax)
+        {
+            VisitInternal(obj, context, whileSyntax.Condition);
+            VisitInternal(obj, context, whileSyntax.Body);
+        }
         else if (node is CallSyntax call)
         {
             VisitInternal(obj, context, call.Target);
@@ -105,6 +110,20 @@ internal static class SyntaxVisitor
         else if (node is ParenthesizedExpressionSyntax parenthesizedExpression)
         {
             VisitInternal(obj, context, parenthesizedExpression.Expression);
+        }
+        else if (node is MemberAccessSyntax memberAccess)
+        {
+            VisitInternal(obj, context, memberAccess.Target);
+
+            // HACK: set parent target on member identifier
+            memberAccess.Member.ParentTarget = memberAccess.Target;
+
+            VisitInternal(obj, context, memberAccess.Member);
+        }
+        else if (node is IndexerAccessSyntax indexerAccess)
+        {
+            VisitInternal(obj, context, indexerAccess.Target);
+            VisitInternal(obj, context, indexerAccess.Argument);
         }
 
         InvokeVisit(obj, context, node);

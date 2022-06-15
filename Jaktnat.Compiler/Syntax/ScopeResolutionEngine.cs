@@ -31,6 +31,12 @@ internal static class ScopeResolutionEngine
                 break;
             case FunctionSyntax functionSyntax:
                 ResolveScopes(functionSyntax.Body, parentBlock);
+
+                // special case: use body block as "parent" block for function params
+                if (functionSyntax.Parameters != null)
+                {
+                    ResolveScopes(functionSyntax.Parameters, functionSyntax.Body);
+                }
                 break;
             case CallArgumentSyntax callArgumentSyntax:
                 ResolveScopes(callArgumentSyntax.Expression, parentBlock);
@@ -54,7 +60,7 @@ internal static class ScopeResolutionEngine
                 }
                 
                 break;
-            case IndexerAccessExpression indexer:
+            case IndexerAccessSyntax indexer:
                 ResolveScopes(indexer.Target, parentBlock);
                 ResolveScopes(indexer.Argument, parentBlock);
                 break;
@@ -78,8 +84,20 @@ internal static class ScopeResolutionEngine
             case ParenthesizedExpressionSyntax parenthesizedExpression:
                 ResolveScopes(parenthesizedExpression.Expression, parentBlock);
                 break;
+            case MemberAccessSyntax memberAccess:
+                ResolveScopes(memberAccess.Target, parentBlock);
+                ResolveScopes(memberAccess.Member, parentBlock);
+                break;
+            case ParameterListSyntax parameterList:
+                foreach (var parameter in parameterList.Parameters)
+                {
+                    ResolveScopes(parameter, parentBlock);
+                }
+
+                break;
             case IdentifierExpressionSyntax:
             case LiteralExpressionSyntax:
+            case ParameterSyntax:
                 break; // nothing to do
             default:
                 throw new NotImplementedException($"Scope resolution not implemented for syntax type {node.GetType()}");

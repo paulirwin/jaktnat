@@ -3,24 +3,14 @@ using Mono.Cecil.Cil;
 
 namespace Jaktnat.Compiler.Syntax;
 
-public class VariableDeclarationSyntax : SyntaxNode
+public class VariableDeclarationSyntax : DeclarationSyntax
 {
-    public VariableDeclarationSyntax(string name, string? typeName, bool mutable)
+    public VariableDeclarationSyntax(string name, TypeIdentifierSyntax? typeIdentifier, bool mutable)
+        : base (name, typeIdentifier, mutable)
     {
-        Name = name;
-        TypeName = typeName;
-        Mutable = mutable;
     }
     
-    public string Name { get; }
-
-    public string? TypeName { get; set; }
-    
-    public bool Mutable { get; }
-
     public ExpressionSyntax? InitializerExpression { get; set; }
-    
-    public Type? Type { get; set; }
     
     public VariableDefinition? ILVariableDefinition { get; set; }
 
@@ -38,7 +28,7 @@ public class VariableDeclarationSyntax : SyntaxNode
 
         if (InitializerExpression != null)
         {
-            sb.Append("= ");
+            sb.Append(" = ");
             sb.Append(InitializerExpression);
         }
 
