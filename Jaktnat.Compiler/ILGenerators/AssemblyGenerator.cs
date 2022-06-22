@@ -18,12 +18,13 @@ internal static class AssemblyGenerator
             Mono.Cecil.TypeAttributes.NotPublic | Mono.Cecil.TypeAttributes.Class,
             objectType);
         assembly.MainModule.Types.Add(programClass);
+        context.ProgramClass = programClass;
         
         foreach (var child in compilationUnit.Children)
         {
             if (child is FunctionSyntax functionSyntax)
             {
-                TopLevelFunctionILGenerator.GenerateTopLevelFunction(context, functionSyntax, programClass);
+                TopLevelFunctionILGenerator.GenerateTopLevelFunction(context, functionSyntax);
             }
         }
 

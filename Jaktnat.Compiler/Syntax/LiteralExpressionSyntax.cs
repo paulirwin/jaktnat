@@ -10,5 +10,9 @@ public class LiteralExpressionSyntax : ExpressionSyntax
 
     public object Value { get; }
 
-    public override string ToString() => Value.ToString() ?? ""; // TODO: format literals properly
+    public override string ToString() => Value switch
+    {
+        string s => $"\"{s}\"",
+        _ => Value.ToString() ?? "",
+    };
 }

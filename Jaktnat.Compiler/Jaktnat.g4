@@ -35,8 +35,6 @@ variableDeclarationType: COLON type;
 
 expression: 
     primaryExpr
-    | prefixUnaryOperator expression
-    | expression postfixUnaryOperator
     | expression typeCastOperator type
     | expression IS type
     | expression call
@@ -52,10 +50,12 @@ expression:
     | expression binaryLogicalAnd expression            // 70
     | expression binaryOrCoalescing expression          // 69
     | expression binaryAssign expression                // 50
+    | expression postfixUnaryOperator
     | parenthesizedExpression;
 
 primaryExpr:
     operand
+    | prefixUnaryOperator expression
     | typeName
     | array;
 
@@ -143,6 +143,7 @@ binaryMultiplyDivideModulo:
 typeCastOperator: ASBANG | ASQUESTION; 
 
 prefixUnaryOperator: 
+    { JaktnatParserSupport.IsPrefixOp(_input) }?
     PLUSPLUS 
     | MINUSMINUS
     | MINUS
@@ -152,6 +153,7 @@ prefixUnaryOperator:
     | TILDE;
 
 postfixUnaryOperator:
+    { JaktnatParserSupport.IsPostfixOp(_input) }?
     PLUSPLUS
     | MINUSMINUS;
 

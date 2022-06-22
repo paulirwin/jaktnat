@@ -323,6 +323,16 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new WhileSyntax(condition, block);
     }
 
+    public override SyntaxNode? VisitPrimaryExpr(JaktnatParser.PrimaryExprContext context)
+    {
+        if (context.prefixUnaryOperator() is { } prefixUnaryOperator)
+        {
+            return VisitPrefixUnaryExpression(context, prefixUnaryOperator);
+        }
+
+        return base.VisitPrimaryExpr(context);
+    }
+
     public override SyntaxNode? VisitExpression(JaktnatParser.ExpressionContext context)
     {
         if (context.typeCastOperator() is { } typeCastOperator)
@@ -334,12 +344,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         {
             return VisitTypeCheckExpression(context);
         }
-
-        if (context.prefixUnaryOperator() is { } prefixUnaryOperator)
-        {
-            return VisitPrefixUnaryExpression(context, prefixUnaryOperator);
-        }
-
+        
         if (context.postfixUnaryOperator() is { } postfixUnaryOperator)
         {
             return VisitPostfixUnaryExpression(context, postfixUnaryOperator);
@@ -421,18 +426,13 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new TypeCheckSyntax(expr, type);
     }
 
-    private SyntaxNode VisitPrefixUnaryExpression(JaktnatParser.ExpressionContext context, JaktnatParser.PrefixUnaryOperatorContext unaryOperator)
+    private SyntaxNode VisitPrefixUnaryExpression(JaktnatParser.PrimaryExprContext context, JaktnatParser.PrefixUnaryOperatorContext unaryOperator)
     {
-        var exprs = context.expression();
-
-        if (exprs.Length != 1)
+        var expr = context.expression();
+        
+        if (Visit(expr) is not ExpressionSyntax expression)
         {
-            throw new ParserError("Unary expressions need only one expression", context.start);
-        }
-
-        if (Visit(exprs[0]) is not ExpressionSyntax expr)
-        {
-            throw new ParserError("Unable to parse unary expression", exprs[0].start);
+            throw new ParserError("Unable to parse unary expression", expr.start);
         }
         
         var op = unaryOperator.GetText() switch
@@ -447,7 +447,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             _ => throw new ParserError($"Unknown prefix unary operator: {unaryOperator.GetText()}", unaryOperator.start),
         };
 
-        return new UnaryExpressionSyntax(expr, op);
+        return new UnaryExpressionSyntax(expression, op);
     }
 
     private SyntaxNode VisitPostfixUnaryExpression(JaktnatParser.ExpressionContext context, JaktnatParser.PostfixUnaryOperatorContext unaryOperator)

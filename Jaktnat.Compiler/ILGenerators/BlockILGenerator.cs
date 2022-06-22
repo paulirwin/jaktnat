@@ -17,6 +17,10 @@ internal static class BlockILGenerator
             {
                 IfSyntaxILGenerator.GenerateIfStatement(context, il, ifSyntax);
             }
+            else if (child is WhileSyntax whileSyntax)
+            {
+                WhileSyntaxILGenerator.GenerateWhileStatement(context, il, whileSyntax);
+            }
             else if (child is VariableDeclarationSyntax varDecl)
             {
                 VariableDeclarationILGenerator.GenerateVariableDeclaration(context, il, varDecl);

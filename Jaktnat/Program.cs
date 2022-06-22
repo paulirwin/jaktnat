@@ -2,9 +2,9 @@
 
 namespace Jaktnat;
 
-internal class Program
+public class Program
 {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
         if (args.Length == 0)
         {
@@ -12,13 +12,16 @@ internal class Program
             return;
         }
 
-        var compiler = new JaktnatCompiler();
-
         var fileText = File.ReadAllText(args[0]);
 
         var assemblyName = Path.GetFileNameWithoutExtension(args[0]);
 
-        compiler.CompileText(assemblyName, fileText);
+        var options = new JaktnatCompilerOptions
+        {
+            Backend = BackendType.Roslyn,
+        };
+
+        JaktnatCompiler.CompileText(options, assemblyName, fileText);
 
         Console.WriteLine("Build succeeded");
     }

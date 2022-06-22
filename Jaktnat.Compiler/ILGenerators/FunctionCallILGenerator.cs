@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Jaktnat.Compiler.ObjectModel;
 using Jaktnat.Compiler.Syntax;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace Jaktnat.Compiler.ILGenerators;
@@ -9,33 +10,64 @@ internal static class FunctionCallILGenerator
 {
     public static void GenerateFunctionCall(CompilationContext context, ILProcessor il, CallSyntax callSyntax)
     {
-        // TODO: support declared functions
-        if (callSyntax.MatchedMethod is not RuntimeMethodInfoFreeFunction { Method: MethodInfo method })
+        if (context.ProgramClass == null)
+        {
+            throw new InvalidOperationException("Program class not yet generated");
+        }
+
+        MethodReference methodRef;
+        var paramTypes = new List<Type>();
+
+        if (callSyntax.MatchedMethod is RuntimeMethodInfoFreeFunction { Method: MethodInfo method })
+        {
+            methodRef = il.Body.Method.DeclaringType.Module.ImportReference(method);
+
+            var parameters = method.GetParameters();
+
+            foreach (var param in parameters)
+            {
+                if (param.ParameterType.IsArray && param.GetCustomAttribute<ParamArrayAttribute>() != null)
+                {
+                    throw new NotImplementedException("Calling variable-argument \"params\" functions is not yet supported");
+                }
+
+                paramTypes.Add(param.ParameterType);
+            }
+        }
+        else if (callSyntax.MatchedMethod is DeclaredFreeFunction declaredFreeFunction)
+        {
+            var programMethod = context.ProgramClass.Methods.FirstOrDefault(i => i.Name == declaredFreeFunction.FunctionSyntax.Name);
+
+            methodRef = programMethod ?? throw new CompilerError($"Unable to resolve function \"{callSyntax.Target}\"");
+
+            if (declaredFreeFunction.FunctionSyntax.Parameters != null)
+            {
+                foreach (var parameter in declaredFreeFunction.FunctionSyntax.Parameters.Parameters)
+                {
+                    if (parameter.Type == null)
+                    {
+                        throw new CompilerError($"Missing resolved type for parameter {parameter.Name}");
+                    }
+
+                    paramTypes.Add(parameter.Type);
+                }
+            }
+        }
+        else
         {
             throw new CompilerError($"Unable to resolve function \"{callSyntax.Target}\"");
         }
-
-        var methodRef = il.Body.Method.DeclaringType.Module.ImportReference(method);
-        var parameters = method.GetParameters();
-
-        for (var paramIndex = 0; paramIndex < parameters.Length; paramIndex++)
+        
+        for (var paramIndex = 0; paramIndex < paramTypes.Count; paramIndex++)
         {
-            var param = parameters[paramIndex];
+            var param = paramTypes[paramIndex];
             int stop = paramIndex + 1;
-
-            if (param.ParameterType.IsArray && param.GetCustomAttribute<ParamArrayAttribute>() != null)
-            {
-                // params parameter; consume the rest of the arguments into the array
-                stop = callSyntax.Arguments.Count;
-
-                throw new NotImplementedException("Calling variable-argument \"params\" functions is not yet supported");
-            }
-
+            
             for (int argIndex = paramIndex; argIndex < stop; argIndex++)
             {
                 var argument = callSyntax.Arguments[argIndex];
 
-                ExpressionILGenerator.GenerateExpression(context, il, argument.Expression, param.ParameterType);
+                ExpressionILGenerator.GenerateExpression(context, il, argument.Expression, param);
             }
         }
 

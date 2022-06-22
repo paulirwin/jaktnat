@@ -1,22 +1,22 @@
 ﻿using System.Reflection;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
-using Jaktnat.Compiler.ILGenerators;
+using Jaktnat.Compiler.Backends;
 using Jaktnat.Compiler.Reflection;
 using Jaktnat.Compiler.Syntax;
 using Jaktnat.Runtime;
 
 namespace Jaktnat.Compiler;
 
-public class JaktnatCompiler
+public static class JaktnatCompiler
 {
-    public Assembly CompileText(string assemblyName, string contents)
+    public static Assembly CompileText(JaktnatCompilerOptions options, string assemblyName, string contents)
     {
         var runtimeAssembly = typeof(FreeFunctionAttribute).Assembly;
         
         // Phase 1: lexing and parsing
         var compilationUnit = ParseProgram(contents);
-        var context = new CompilationContext(compilationUnit, runtimeAssembly);
+        var context = new CompilationContext(compilationUnit, runtimeAssembly, assemblyName);
         FreeFunctionResolver.PopulateGlobals(context);
 
         // Phase 2: scope resolution
@@ -26,9 +26,21 @@ public class JaktnatCompiler
         SyntaxVisitor.Visit<NameResolutionEngine>(context, compilationUnit);
 
         // Phase 4: assembly generation
-        return AssemblyGenerator.CompileAssembly(context, assemblyName, compilationUnit);
+        var backend = GetCompilerBackend(options.Backend);
+
+        return backend.CompileAssembly(context, assemblyName, compilationUnit);
     }
-    
+
+    private static ICompilerBackend GetCompilerBackend(BackendType backend)
+    {
+        return backend switch
+        {
+            BackendType.ILGenerator => new ILGeneratorBackend(),
+            BackendType.Roslyn => new RoslynBackend(),
+            _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, $"Backend type {backend} not supported"),
+        };
+    }
+
     private static CompilationUnitSyntax ParseProgram(string contents)
     {
         var lexer = new JaktnatLexer(new AntlrInputStream(contents));

@@ -23,14 +23,17 @@ public class SampleTests
 
         var expectation = ParseExpectation(contents);
 
-        var compiler = new JaktnatCompiler();
-
         var assemblyName = Path.GetFileNameWithoutExtension(filePath);
         Assembly assembly;
 
+        var options = new JaktnatCompilerOptions
+        {
+            Backend = BackendType.Roslyn,
+        };
+
         try
         {
-            assembly = compiler.CompileText(assemblyName, contents);
+            assembly = JaktnatCompiler.CompileText(options, assemblyName, contents);
         }
         catch
         {
