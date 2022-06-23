@@ -1,0 +1,8 @@
+/// Expect:
+/// - output: "true\n"
+
+function main() {
+    if (true) {
+        println("true")
+    }
+}

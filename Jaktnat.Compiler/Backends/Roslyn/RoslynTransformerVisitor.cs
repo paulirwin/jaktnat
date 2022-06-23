@@ -39,6 +39,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             IfSyntax ifSyntax => VisitIf(context, ifSyntax),
             ParameterSyntax parameter => VisitParameter(context, parameter),
             WhileSyntax whileSyntax => VisitWhile(context, whileSyntax),
+            LoopSyntax loopSyntax => VisitLoop(context, loopSyntax),
             BinaryExpressionSyntax binary => VisitBinary(context, binary),
             TypeCastSyntax typeCast => VisitTypeCast(context, typeCast),
             MemberAccessSyntax memberAccess => VisitMemberAccess(context, memberAccess),
@@ -47,8 +48,20 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             UnaryExpressionSyntax unary => VisitUnary(context, unary),
             ArraySyntax array => VisitArray(context, array),
             ClassDeclarationSyntax classDecl => VisitClassDeclaration(context, classDecl),
+            BreakSyntax => SyntaxFactory.BreakStatement(),
+            ContinueSyntax => SyntaxFactory.ContinueStatement(),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode VisitLoop(CompilationContext context, LoopSyntax loopSyntax)
+    {
+        if (Visit(context, loopSyntax.Body) is not CSBlockSyntax body)
+        {
+            throw new CompilerError("Body did not evaluate to a block");
+        }
+
+        return SyntaxFactory.WhileStatement(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression), body);
     }
 
     private CSharpSyntaxNode VisitClassDeclaration(CompilationContext context, ClassDeclarationSyntax classDecl)

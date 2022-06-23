@@ -22,6 +22,11 @@
     <None Remove="samples\boolean\logical_not.jakt" />
     <None Remove="samples\boolean\logical_or.jakt" />
     <None Remove="samples\classes\class.jakt" />
+    <None Remove="samples\control_flow\if.jakt" />
+    <None Remove="samples\control_flow\loop.jakt" />
+    <None Remove="samples\control_flow\while.jakt" />
+    <None Remove="samples\control_flow\while2.jakt" />
+    <None Remove="samples\control_flow\while_with_bad_expression_type.jakt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +46,11 @@
     <EmbeddedResource Include="samples\boolean\logical_not.jakt" />
     <EmbeddedResource Include="samples\boolean\logical_or.jakt" />
     <EmbeddedResource Include="samples\classes\class.jakt" />
+    <EmbeddedResource Include="samples\control_flow\if.jakt" />
+    <EmbeddedResource Include="samples\control_flow\loop.jakt" />
+    <EmbeddedResource Include="samples\control_flow\while.jakt" />
+    <EmbeddedResource Include="samples\control_flow\while2.jakt" />
+    <EmbeddedResource Include="samples\control_flow\while_with_bad_expression_type.jakt" />
   </ItemGroup>
 
   <ItemGroup>

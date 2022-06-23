@@ -71,6 +71,10 @@ internal static class SyntaxVisitor
             VisitInternal(obj, context, whileSyntax.Condition);
             VisitInternal(obj, context, whileSyntax.Body);
         }
+        else if (node is LoopSyntax loopSyntax)
+        {
+            VisitInternal(obj, context, loopSyntax.Body);
+        }
         else if (node is CallSyntax call)
         {
             VisitInternal(obj, context, call.Target);

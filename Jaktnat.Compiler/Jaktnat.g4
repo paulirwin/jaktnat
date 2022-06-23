@@ -30,13 +30,25 @@ statement:
     | expression 
     | ifStatement 
     | letStatement 
-    | whileStatement;
+    | mutStatement
+    | whileStatement
+    | loopStatement
+    | breakStatement
+    | continueStatement;
 
 ifStatement: IF expression block;
 
 whileStatement: WHILE expression block;
 
+loopStatement: LOOP block;
+
+breakStatement: BREAK;
+
+continueStatement: CONTINUE;
+
 letStatement: LET variableDeclaration EQUAL expression;
+
+mutStatement: MUT NAME variableDeclarationType? EQUAL expression;
 
 variableDeclaration: MUTABLE? NAME variableDeclarationType?;
 
@@ -178,7 +190,11 @@ FUNCTION: 'function';
 CLASS: 'class';
 THIS: 'this';
 WHILE: 'while';
+LOOP: 'loop';
+BREAK: 'break';
+CONTINUE: 'continue';
 ANONYMOUS: 'anonymous';
+MUT: 'mut';
 MUTABLE: 'mutable';
 TRUE: 'true';
 FALSE: 'false';

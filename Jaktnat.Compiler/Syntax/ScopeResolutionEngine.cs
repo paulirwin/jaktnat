@@ -29,6 +29,9 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(whileSyntax.Condition, parentBlock);
                 ResolveScopes(whileSyntax.Body, parentBlock);
                 break;
+            case LoopSyntax loopSyntax:
+                ResolveScopes(loopSyntax.Body, parentBlock);
+                break;
             case FunctionSyntax functionSyntax:
                 ResolveScopes(functionSyntax.Body, parentBlock);
 
@@ -106,6 +109,8 @@ internal static class ScopeResolutionEngine
             case LiteralExpressionSyntax:
             case ParameterSyntax:
             case PropertySyntax:
+            case BreakSyntax:
+            case ContinueSyntax:
                 break; // nothing to do
             default:
                 throw new NotImplementedException($"Scope resolution not implemented for syntax type {node.GetType()}");

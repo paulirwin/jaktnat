@@ -306,6 +306,33 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return variableDeclaration;
     }
 
+    public override SyntaxNode? VisitMutStatement(JaktnatParser.MutStatementContext context)
+    {
+        var name = context.NAME().GetText();
+
+        TypeIdentifierSyntax? type = null;
+
+        if (context.variableDeclarationType() is { } typeDecl)
+        {
+            if (Visit(typeDecl.type()) is not TypeIdentifierSyntax typeValue)
+            {
+                throw new ParserError("Unable to parse variable type", typeDecl.start);
+            }
+
+            type = typeValue;
+        }
+
+        if (VisitExpression(context.expression()) is not ExpressionSyntax initializer)
+        {
+            throw new ParserError("Unable to parse variable initialization expression", context.Start);
+        }
+        
+        return new VariableDeclarationSyntax(name, type, true)
+        {
+            InitializerExpression = initializer
+        };
+    }
+
     public override SyntaxNode? VisitVariableDeclaration(JaktnatParser.VariableDeclarationContext context)
     {
         var mutable = context.MUTABLE() != null;
@@ -382,6 +409,26 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
 
         return new WhileSyntax(condition, block);
+    }
+
+    public override SyntaxNode? VisitLoopStatement(JaktnatParser.LoopStatementContext context)
+    {
+        if (Visit(context.block()) is not BlockSyntax block)
+        {
+            throw new ParserError("Unable to parse loop block", context.start);
+        }
+
+        return new LoopSyntax(block);
+    }
+
+    public override SyntaxNode? VisitBreakStatement(JaktnatParser.BreakStatementContext context)
+    {
+        return new BreakSyntax();
+    }
+
+    public override SyntaxNode? VisitContinueStatement(JaktnatParser.ContinueStatementContext context)
+    {
+        return new ContinueSyntax();
     }
 
     public override SyntaxNode? VisitPrimaryExpr(JaktnatParser.PrimaryExprContext context)

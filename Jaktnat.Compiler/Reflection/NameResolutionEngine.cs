@@ -22,7 +22,8 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<MemberAccessSyntax>,
     ISyntaxVisitor<IndexerAccessSyntax>,
     ISyntaxVisitor<PropertySyntax>,
-    ISyntaxVisitor<ClassDeclarationSyntax>
+    ISyntaxVisitor<ClassDeclarationSyntax>,
+    ISyntaxVisitor<ParenthesizedExpressionSyntax>
 {
     public void Visit(CompilationContext context, CallArgumentSyntax node)
     {
@@ -547,5 +548,10 @@ internal class NameResolutionEngine :
             .ToList();
 
         node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));
+    }
+
+    public void Visit(CompilationContext context, ParenthesizedExpressionSyntax node)
+    {
+        node.ExpressionType = node.Expression.ExpressionType;
     }
 }
