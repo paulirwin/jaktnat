@@ -44,12 +44,13 @@ internal static class FunctionCallILGenerator
             {
                 foreach (var parameter in declaredFreeFunction.FunctionSyntax.Parameters.Parameters)
                 {
-                    if (parameter.Type == null)
+                    // TODO: support declared types
+                    if (parameter.Type is not RuntimeTypeReference { RuntimeType: Type runtimeType })
                     {
                         throw new CompilerError($"Missing resolved type for parameter {parameter.Name}");
                     }
 
-                    paramTypes.Add(parameter.Type);
+                    paramTypes.Add(runtimeType);
                 }
             }
         }

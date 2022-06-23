@@ -46,6 +46,48 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new FunctionSyntax(name, parameterList, body);
     }
 
+    public override SyntaxNode? VisitClass(JaktnatParser.ClassContext context)
+    {
+        var name = context.NAME().GetText();
+
+        var classSyntax = new ClassDeclarationSyntax(name);
+
+        foreach (var classMember in context.classMember())
+        {
+            if (Visit(classMember) is not MemberDeclarationSyntax member)
+            {
+                throw new ParserError("Unexpected result from visiting class member", classMember.start);
+            }
+
+            classSyntax.Members.Add(member);
+        }
+
+        return classSyntax;
+    }
+
+    public override SyntaxNode? VisitProperty(JaktnatParser.PropertyContext context)
+    {
+        var name = context.NAME().GetText();
+
+        TypeIdentifierSyntax? type;
+
+        if (context.variableDeclarationType() is { } typeDecl)
+        {
+            if (Visit(typeDecl.type()) is not TypeIdentifierSyntax typeValue)
+            {
+                throw new ParserError("Unable to parse variable type", typeDecl.start);
+            }
+
+            type = typeValue;
+        }
+        else
+        {
+            throw new ParserError("Properties must have a declared type", context.start);
+        }
+
+        return new PropertySyntax(name, type);
+    }
+
     public override SyntaxNode? VisitParameterList(JaktnatParser.ParameterListContext context)
     {
         var list = new ParameterListSyntax();
@@ -136,7 +178,12 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
     public override SyntaxNode? VisitCallArgument(JaktnatParser.CallArgumentContext context)
     {
-        var name = (string?)null; // TODO: support parameter names
+        string? name = null;
+
+        if (context.argumentName() is { } argumentName)
+        {
+            name = argumentName.NAME().GetText();
+        }
 
         if (VisitExpression(context.expression()) is not ExpressionSyntax expr)
         {

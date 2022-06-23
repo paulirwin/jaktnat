@@ -5,19 +5,22 @@ namespace Jaktnat.Compiler.ILGenerators;
 
 internal static class ExpressionILGenerator
 {
-    public static void GenerateExpression(CompilationContext context, ILProcessor il, ExpressionSyntax expression, Type? targetType)
+    public static void GenerateExpression(CompilationContext context, ILProcessor il, ExpressionSyntax expression, TypeReference? targetType)
     {
         if (expression is LiteralExpressionSyntax literal)
         {
-            if (targetType == null || literal.ExpressionType == targetType)
+            if (targetType == null || literal.ExpressionType.Equals(targetType))
             {
                 var op = GetLoadLiteralOp(il, literal.Value);
 
                 il.Append(op);
             }
-            else if (literal.ExpressionType is { IsValueType: true } && targetType == typeof(object))
+            else if (literal.ExpressionType is RuntimeTypeReference { IsValueType: true, RuntimeType: Type type } 
+                     && targetType is RuntimeTypeReference { RuntimeType: Type targetRuntimeType }
+                     && targetRuntimeType == typeof(object))
             {
-                var tempType = il.Body.Method.DeclaringType.Module.ImportReference(literal.ExpressionType);
+                // TODO: support declared value type boxing
+                var tempType = il.Body.Method.DeclaringType.Module.ImportReference(type);
 
                 il.Append(GetLoadLiteralOp(il, literal.Value)); // put literal on stack
                 il.Append(il.Create(OpCodes.Box, tempType)); // constrain (box) value type to parameter type
@@ -44,7 +47,7 @@ internal static class ExpressionILGenerator
 
                 il.Append(il.Create(OpCodes.Ldloc_S, varDecl.ILVariableDefinition));
 
-                if (varDecl.Type.IsValueType && targetType == typeof(object))
+                if (varDecl.Type.IsValueType && targetType is RuntimeTypeReference { RuntimeType: Type runtimeType } && runtimeType == typeof(object))
                 {
                     il.Append(il.Create(OpCodes.Box, varDecl.ILVariableDefinition.VariableType)); // constrain (box) value type to parameter type
                 }
@@ -60,15 +63,16 @@ internal static class ExpressionILGenerator
         }
         else if (expression is ArraySyntax array)
         {
-            if (array.ExpressionType?.GetElementType() is not Type elementType)
+            // TODO: support arrays of declared types
+            if (array.ExpressionType?.GetElementType() is not RuntimeTypeReference { RuntimeType: Type elementType })
             {
                 throw new CompilerError("Array initializer does not have a type or is not an array");
             }
             
-            var elementTypeRef = il.Body.Method.DeclaringType.Module.ImportReference(elementType);
+            var elementTypeRefImport = il.Body.Method.DeclaringType.Module.ImportReference(elementType);
 
             il.Append(il.Create(OpCodes.Ldc_I4, array.ItemsList.Items.Count));
-            il.Append(il.Create(OpCodes.Newarr, elementTypeRef));
+            il.Append(il.Create(OpCodes.Newarr, elementTypeRefImport));
 
             int index = 0;
             foreach (var item in array.ItemsList.Items)

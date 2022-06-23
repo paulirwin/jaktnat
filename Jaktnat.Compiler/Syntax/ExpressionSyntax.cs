@@ -6,10 +6,10 @@ public abstract class ExpressionSyntax : SyntaxNode
     {
     }
 
-    protected ExpressionSyntax(Type? expressionType)
+    protected ExpressionSyntax(TypeReference? expressionType)
     {
         ExpressionType = expressionType;
     }
 
-    public Type? ExpressionType { get; set; }
+    public TypeReference? ExpressionType { get; set; }
 }

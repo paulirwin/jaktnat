@@ -95,9 +95,17 @@ internal static class ScopeResolutionEngine
                 }
 
                 break;
+            case ClassDeclarationSyntax classDeclaration:
+                foreach (var member in classDeclaration.Members)
+                {
+                    ResolveScopes(member, parentBlock);
+                }
+
+                break;
             case IdentifierExpressionSyntax:
             case LiteralExpressionSyntax:
             case ParameterSyntax:
+            case PropertySyntax:
                 break; // nothing to do
             default:
                 throw new NotImplementedException($"Scope resolution not implemented for syntax type {node.GetType()}");

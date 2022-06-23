@@ -32,12 +32,12 @@ internal static class TopLevelFunctionILGenerator
         {
             foreach (var param in function.Parameters.Parameters)
             {
-                if (param.Type == null)
+                if (param.Type is not RuntimeTypeReference { RuntimeType: Type runtimeType })
                 {
                     throw new CompilerError($"Parameter {param.Name} does not have a resolved type");
                 }
 
-                var paramType = context.ProgramClass.Module.ImportReference(param.Type);
+                var paramType = context.ProgramClass.Module.ImportReference(runtimeType);
                 method.Parameters.Add(new ParameterDefinition(param.Name, ParameterAttributes.None, paramType));
             }
         }

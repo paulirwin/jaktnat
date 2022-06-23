@@ -41,7 +41,10 @@ internal static class SyntaxVisitor
         }
         else if (node is ParameterSyntax parameter)
         {
-            VisitInternal(obj, context, parameter.TypeIdentifier);
+            if (parameter.TypeIdentifier != null)
+            {
+                VisitInternal(obj, context, parameter.TypeIdentifier);
+            }
         }
         else if (node is ArraySyntax array)
         {
@@ -124,6 +127,17 @@ internal static class SyntaxVisitor
         {
             VisitInternal(obj, context, indexerAccess.Target);
             VisitInternal(obj, context, indexerAccess.Argument);
+        }
+        else if (node is ClassDeclarationSyntax classDeclaration)
+        {
+            foreach (var member in classDeclaration.Members)
+            {
+                VisitInternal(obj, context, member);
+            }
+        }
+        else if (node is PropertySyntax property)
+        {
+            VisitInternal(obj, context, property.TypeIdentifier);
         }
 
         InvokeVisit(obj, context, node);

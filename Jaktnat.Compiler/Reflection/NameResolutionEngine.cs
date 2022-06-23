@@ -20,7 +20,9 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<TypeCastSyntax>,
     ISyntaxVisitor<TypeCheckSyntax>,
     ISyntaxVisitor<MemberAccessSyntax>,
-    ISyntaxVisitor<IndexerAccessSyntax>
+    ISyntaxVisitor<IndexerAccessSyntax>,
+    ISyntaxVisitor<PropertySyntax>,
+    ISyntaxVisitor<ClassDeclarationSyntax>
 {
     public void Visit(CompilationContext context, CallArgumentSyntax node)
     {
@@ -69,18 +71,25 @@ internal class NameResolutionEngine :
                 throw new CompilerError("Unable to find member on target expression as target hasn't been evaluated properly");
             }
 
-            var members = identifier.ParentTarget.ExpressionType
-                .GetMembers()
-                .Where(i => i.Name == identifier.Name)
-                .ToList();
-
-            if (members.Count == 0)
+            if (identifier.ParentTarget.ExpressionType is RuntimeTypeReference runtimeType)
             {
-                throw new CompilerError($"Unable to resolve identifier {identifier.Name} on type {identifier.ParentTarget.ExpressionType}");
-            }
+                var members = runtimeType.RuntimeType
+                    .GetMembers()
+                    .Where(i => i.Name == identifier.Name)
+                    .ToList();
 
-            identifier.ExpressionType = members[0].GetType();
-            identifier.Target = members;
+                if (members.Count == 0)
+                {
+                    throw new CompilerError($"Unable to resolve identifier {identifier.Name} on type {identifier.ParentTarget.ExpressionType}");
+                }
+
+                identifier.ExpressionType = members[0].GetType();
+                identifier.Target = members;
+            }
+            else
+            {
+                throw new NotImplementedException("Need to support identifier expressions on declared types");
+            }
         }
         else if (identifier.ParentBlock.TryResolveDeclaration(identifier.Name, out var varDecl))
         {
@@ -99,6 +108,10 @@ internal class NameResolutionEngine :
                 case FreeFunctionOverloadSet overloadSet:
                     identifier.ExpressionType = typeof(MethodInfo);
                     identifier.Target = overloadSet;
+                    break;
+                case TypeDeclarationSyntax typeDeclaration:
+                    identifier.ExpressionType = typeof(Type);
+                    identifier.Target = typeDeclaration;
                     break;
                 default:
                     throw new CompilerError($"Globals of type {global.GetType()} are not supported");
@@ -120,19 +133,96 @@ internal class NameResolutionEngine :
         {
             node.PossibleMatchedMethods = overloadSet.FreeFunctions;
         }
+        else if (node.Target is IdentifierExpressionSyntax { Target: TypeDeclarationSyntax type })
+        {
+            node.PossibleMatchedConstructors = type.Constructors;
+        }
 
-        node.MatchedMethod = ResolveOverloads(node);
-        node.ExpressionType = node.MatchedMethod.ReturnType;
+        ResolveOverloads(node);
     }
 
-    private static FreeFunction ResolveOverloads(CallSyntax call)
+    private static void ResolveOverloads(CallSyntax call)
     {
-        if (call.PossibleMatchedMethods == null)
+        if (call.PossibleMatchedMethods == null 
+            && call.PossibleMatchedConstructors == null)
         {
             throw new InvalidOperationException("Overload resolution called before name resolution");
         }
 
         var argTypes = call.Arguments.Select(i => i.ArgumentType).ToArray();
+
+        if (call.PossibleMatchedMethods != null)
+        {
+            if (ResolveMethodOverloads(call, argTypes, out var freeFunction) && freeFunction != null)
+            {
+                call.MatchedMethod = freeFunction;
+                call.ExpressionType = freeFunction.ReturnType;
+                return;
+            }
+
+            throw new CompilerError($"Unable to resolve overload, ambiguous matches found: {string.Join(", ", call.PossibleMatchedMethods)}");
+        }
+
+        if (call.PossibleMatchedConstructors is { Count: > 0 })
+        {
+            if (ResolveConstructorOverloads(call, argTypes, out var constructor) && constructor != null)
+            {
+                call.MatchedConstructor = constructor;
+                call.ExpressionType = constructor.DeclaringType;
+                return;
+            }
+
+            throw new CompilerError($"Unable to resolve overload, ambiguous constructor matches found: {string.Join(", ", call.PossibleMatchedConstructors)}");
+        }
+
+        throw new CompilerError($"Unable to resolve overload");
+    }
+
+    private static bool ResolveConstructorOverloads(CallSyntax call, TypeReference?[] argTypes, out ConstructorSyntax? constructor)
+    {
+        if (call.PossibleMatchedConstructors == null)
+        {
+            constructor = null;
+            return false;
+        }
+
+        // TODO: support matching on parameter name?
+        // TODO: support `params` parameters
+        // TODO: support overload precedence, i.e. for a String argument, prefer (String s) over (Object o)
+        foreach (var possibility in call.PossibleMatchedConstructors)
+        {
+            if (possibility.Parameters.Parameters.Count == 0
+                && call.Arguments.Count == 0)
+            {
+                constructor = possibility;
+                return true;
+            }
+            else if (call.Arguments.Count > 0)
+            {
+                var parameterTypes = possibility.Parameters.Parameters
+                    .Select(i => i.Type).ToArray();
+
+                if (parameterTypes.Length == call.Arguments.Count
+                    && ParameterTypesAreCompatible(parameterTypes, argTypes))
+                {
+                    constructor = possibility;
+                    return true;
+                }
+            }
+            
+        }
+
+        constructor = null;
+        return false;
+    }
+
+    private static bool ResolveMethodOverloads(CallSyntax call, TypeReference?[] argTypes, out FreeFunction? freeFunction)
+    {
+        if (call.PossibleMatchedMethods == null)
+        {
+            freeFunction = null;
+            return false;
+        }
 
         // TODO: support matching on parameter name?
         // TODO: support `params` parameters
@@ -141,12 +231,13 @@ internal class NameResolutionEngine :
         {
             if (possibility is RuntimeMethodInfoFreeFunction runtimeFunction)
             {
-                var parameterTypes = runtimeFunction.Method.GetParameters().Select(i => i.ParameterType).ToArray();
+                var parameterTypes = runtimeFunction.Method.GetParameters().Select(i => new RuntimeTypeReference(i.ParameterType)).ToArray();
 
                 if (parameterTypes.Length == call.Arguments.Count
                     && ParameterTypesAreCompatible(parameterTypes, argTypes))
                 {
-                    return possibility;
+                    freeFunction = possibility;
+                    return true;
                 }
             }
             else if (possibility is DeclaredFreeFunction declaredFunction)
@@ -154,7 +245,8 @@ internal class NameResolutionEngine :
                 if (declaredFunction.FunctionSyntax.Parameters == null
                     && call.Arguments.Count == 0)
                 {
-                    return possibility;
+                    freeFunction = possibility;
+                    return true;
                 }
                 else if (call.Arguments.Count > 0 && declaredFunction.FunctionSyntax.Parameters is { } parameters)
                 {
@@ -164,16 +256,18 @@ internal class NameResolutionEngine :
                     if (parameterTypes.Length == call.Arguments.Count
                         && ParameterTypesAreCompatible(parameterTypes, argTypes))
                     {
-                        return possibility;
+                        freeFunction = possibility;
+                        return true;
                     }
                 }
             }
         }
 
-        throw new CompilerError($"Unable to resolve overload, ambiguous matches found: {string.Join(", ", call.PossibleMatchedMethods)}");
+        freeFunction = null;
+        return false;
     }
 
-    private static bool ParameterTypesAreCompatible(IReadOnlyList<Type?> parameterTypes, IReadOnlyList<Type?> argumentTypes)
+    private static bool ParameterTypesAreCompatible(IReadOnlyList<TypeReference?> parameterTypes, IReadOnlyList<TypeReference?> argumentTypes)
     {
         // TODO: support params
         if (parameterTypes.Count != argumentTypes.Count)
@@ -200,10 +294,16 @@ internal class NameResolutionEngine :
         return true;
     }
 
-    private static bool ParameterTypeIsCompatible(Type parameterType, Type argumentType)
+    internal static bool ParameterTypeIsCompatible(TypeReference parameterType, TypeReference argumentType)
     {
-        return parameterType.IsAssignableFrom(argumentType)
-               || (parameterType == typeof(object) && argumentType.IsValueType);
+        if (parameterType.Equals(typeof(object)))
+        {
+            return true;
+        }
+        
+        return parameterType is DeclaredTypeReference declaredType && argumentType is DeclaredTypeReference argumentDeclaredType
+            ?  declaredType.DeclaredType == argumentDeclaredType.DeclaredType // TODO: support type inheritance / hierarchy
+            : parameterType is RuntimeTypeReference { RuntimeType: Type runtimeType } && argumentType is RuntimeTypeReference { RuntimeType: Type argumentRuntimeType } && runtimeType.IsAssignableFrom(argumentRuntimeType);
     }
 
     public void Visit(CompilationContext context, FunctionSyntax node)
@@ -225,7 +325,11 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, NamedTypeIdentifierSyntax node)
     {
-        if (BuiltInTypeResolver.TryResolveType(node.Name) is Type type)
+        if (context.CompilationUnit.TryResolveType(node.Name, out var typeDecl) && typeDecl != null)
+        {
+            node.Type = typeDecl;
+        }
+        else if (BuiltInTypeResolver.TryResolveType(node.Name) is Type type)
         {
             node.Type = type;
         }
@@ -271,7 +375,7 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, WhileSyntax node)
     {
-        if (node.Condition.ExpressionType != typeof(bool))
+        if (node.Condition.ExpressionType is null || !node.Condition.ExpressionType.Equals(typeof(bool)))
         {
             throw new CompilerError($"Expected a boolean expression for while statement condition, got {node.Condition.ExpressionType?.ToString() ?? "null"}");
         }
@@ -404,5 +508,21 @@ internal class NameResolutionEngine :
         }
 
         node.ExpressionType = node.Target.ExpressionType.GetElementType();
+    }
+
+    public void Visit(CompilationContext context, PropertySyntax node)
+    {
+        node.Type = node.TypeIdentifier.Type;
+    }
+
+    public void Visit(CompilationContext context, ClassDeclarationSyntax node)
+    {
+        context.CompilationUnit.DeclareType(node.Name, node);
+
+        var parameters = node.Members.OfType<PropertySyntax>()
+            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier) { ParentBlock = node.ParentBlock, Type = i.Type })
+            .ToList();
+
+        node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));
     }
 }

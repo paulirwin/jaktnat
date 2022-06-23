@@ -5,17 +5,20 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using BinaryExpressionSyntax = Jaktnat.Compiler.Syntax.BinaryExpressionSyntax;
 using BlockSyntax = Jaktnat.Compiler.Syntax.BlockSyntax;
+using ClassDeclarationSyntax = Jaktnat.Compiler.Syntax.ClassDeclarationSyntax;
 using CompilationUnitSyntax = Jaktnat.Compiler.Syntax.CompilationUnitSyntax;
 using SyntaxNode = Jaktnat.Compiler.Syntax.SyntaxNode;
 using RuntimeMethodInfoFreeFunction = Jaktnat.Compiler.ObjectModel.RuntimeMethodInfoFreeFunction;
 using LiteralExpressionSyntax = Jaktnat.Compiler.Syntax.LiteralExpressionSyntax;
 using VariableDeclarationSyntax = Jaktnat.Compiler.Syntax.VariableDeclarationSyntax;
+using ParameterSyntax = Jaktnat.Compiler.Syntax.ParameterSyntax;
+using ParenthesizedExpressionSyntax = Jaktnat.Compiler.Syntax.ParenthesizedExpressionSyntax;
 
 using CSBlockSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax;
 using CSParameterSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax;
 using CSExpressionSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax;
-using ParameterSyntax = Jaktnat.Compiler.Syntax.ParameterSyntax;
-using ParenthesizedExpressionSyntax = Jaktnat.Compiler.Syntax.ParenthesizedExpressionSyntax;
+using CSMemberDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MemberDeclarationSyntax;
+using CSClassDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax;
 
 namespace Jaktnat.Compiler.Backends.Roslyn;
 
@@ -43,8 +46,23 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             IndexerAccessSyntax indexerAccess => VisitIndexerAccess(context, indexerAccess),
             UnaryExpressionSyntax unary => VisitUnary(context, unary),
             ArraySyntax array => VisitArray(context, array),
+            ClassDeclarationSyntax classDecl => VisitClassDeclaration(context, classDecl),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode VisitClassDeclaration(CompilationContext context, ClassDeclarationSyntax classDecl)
+    {
+        if (classDecl.Constructors.Count != 1)
+        {
+            throw new NotImplementedException("Records must have one constructor");
+        }
+
+        var parameters = classDecl.Constructors[0].Parameters.Parameters.Select(i => VisitParameter(context, i)).Cast<CSParameterSyntax>().ToList();
+
+        return SyntaxFactory.RecordDeclaration(SyntaxFactory.Token(SyntaxKind.RecordKeyword), classDecl.Name)
+            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)))
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
     }
 
     private CSharpSyntaxNode VisitArray(CompilationContext context, ArraySyntax array)
@@ -61,6 +79,16 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         if (Visit(context, unary.Expression) is not CSExpressionSyntax expression)
         {
             throw new CompilerError("Unary expression did not evaluate to an expression");
+        }
+
+        if (unary is TypeCheckSyntax typeCheck)
+        {
+            if (typeCheck.Type.Type == null)
+            {
+                throw new CompilerError("Type check syntax missing resolved type");
+            }
+
+            return SyntaxFactory.BinaryExpression(SyntaxKind.IsExpression, expression, SyntaxFactory.ParseTypeName(typeCheck.Type.Type.FullName));
         }
 
         var (kind, prefix) = unary.Operator switch
@@ -249,7 +277,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         var type = variableDeclaration.TypeIdentifier?.Type
             ?? variableDeclaration.InitializerExpression?.ExpressionType;
 
-        if (type?.FullName == null)
+        if (type.FullName == null)
         {
             throw new CompilerError("Type not determined for variable declaration");
         }
@@ -304,18 +332,6 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
     private CSharpSyntaxNode VisitCall(CompilationContext context, CallSyntax call)
     {
-        if (call.MatchedMethod == null)
-        {
-            throw new CompilerError("No matched method to call");
-        }
-
-        var target = call.MatchedMethod switch
-        {
-            DeclaredFreeFunction declared => SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
-            RuntimeMethodInfoFreeFunction { Method: { DeclaringType: {} type } method } => SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
-            _ => throw new NotImplementedException("Unexpected free function type")
-        };
-
         var args = new List<ArgumentSyntax>();
 
         foreach (var arg in call.Arguments)
@@ -326,11 +342,29 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             {
                 throw new CompilerError("Only expressions can be used as arguments");
             }
-            
+
             args.Add(argExpr);
         }
+        
+        if (call.MatchedMethod != null)
+        {
+            var target = call.MatchedMethod switch
+            {
+                DeclaredFreeFunction declared => SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
+                RuntimeMethodInfoFreeFunction { Method: { DeclaringType: { } type } method } => SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
+                _ => throw new NotImplementedException("Unexpected free function type")
+            };
 
-        return SyntaxFactory.InvocationExpression(target, SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
+            return SyntaxFactory.InvocationExpression(target, SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
+        }
+
+        if (call.MatchedConstructor != null)
+        {
+            return SyntaxFactory.ObjectCreationExpression(SyntaxFactory.IdentifierName(call.MatchedConstructor.DeclaringType.Name))
+                .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
+        }
+
+        throw new CompilerError("No matched method to call");
     }
 
     private CSharpSyntaxNode VisitBlock(CompilationContext context, BlockSyntax block)
@@ -416,7 +450,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
     private CSharpSyntaxNode VisitCompilationUnit(CompilationContext context, CompilationUnitSyntax compilationUnit)
     {
-        var members = new List<MemberDeclarationSyntax>();
+        var members = new List<CSMemberDeclarationSyntax>();
         bool addProgramClass = false;
 
         if (context.RoslynProgramClass == null)
@@ -431,9 +465,13 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         {
             var result = Visit(context, child);
 
-            if (result is ClassDeclarationSyntax classDecl)
+            if (result is CSClassDeclarationSyntax classDecl)
             {
                 members.Add(classDecl);
+            }
+            else if (result is RecordDeclarationSyntax record)
+            {
+                members.Add(record);
             }
             else if (result is MethodDeclarationSyntax method)
             {
@@ -452,7 +490,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
 
         return SyntaxFactory.CompilationUnit()
-            .WithMembers(SyntaxFactory.List(new MemberDeclarationSyntax[]
+            .WithMembers(SyntaxFactory.List(new CSMemberDeclarationSyntax[]
             {
                 SyntaxFactory.NamespaceDeclaration(SyntaxFactory.IdentifierName(context.AssemblyName))
                     .WithMembers(SyntaxFactory.List(members))

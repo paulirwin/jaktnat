@@ -2,5 +2,5 @@
 
 public abstract class TypeIdentifierSyntax : SyntaxNode
 {
-    public Type? Type { get; set; }
+    public TypeReference? Type { get; set; }
 }

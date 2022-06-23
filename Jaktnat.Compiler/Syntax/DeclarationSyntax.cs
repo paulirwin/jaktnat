@@ -15,5 +15,5 @@ public abstract class DeclarationSyntax : SyntaxNode
 
     public bool Mutable { get; }
 
-    public Type? Type { get; set; }
+    public TypeReference? Type { get; set; }
 }

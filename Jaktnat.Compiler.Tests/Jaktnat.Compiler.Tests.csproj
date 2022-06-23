@@ -16,6 +16,7 @@
     <None Remove="samples\basics\format.jakt" />
     <None Remove="samples\basics\hello.jakt" />
     <None Remove="samples\basics\hello_number.jakt" />
+    <None Remove="samples\basics\is.jakt" />
     <None Remove="samples\basics\opening_curly_brace_on_newline.jakt" />
   </ItemGroup>
 
@@ -30,6 +31,7 @@
     <EmbeddedResource Include="samples\basics\format.jakt" />
     <EmbeddedResource Include="samples\basics\hello.jakt" />
     <EmbeddedResource Include="samples\basics\hello_number.jakt" />
+    <EmbeddedResource Include="samples\basics\is.jakt" />
     <EmbeddedResource Include="samples\basics\opening_curly_brace_on_newline.jakt" />
   </ItemGroup>
 

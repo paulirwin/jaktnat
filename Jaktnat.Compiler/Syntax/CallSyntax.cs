@@ -17,6 +17,10 @@ public class CallSyntax : ExpressionSyntax
     internal IList<FreeFunction>? PossibleMatchedMethods { get; set; }
 
     internal FreeFunction? MatchedMethod { get; set; }
+    
+    internal IList<ConstructorSyntax>? PossibleMatchedConstructors { get; set; }
+
+    internal ConstructorSyntax? MatchedConstructor { get; set; }
 
     public override string ToString() => $"{Target}({string.Join(", ", Arguments)})";
 }

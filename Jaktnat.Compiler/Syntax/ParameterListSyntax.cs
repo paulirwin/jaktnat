@@ -2,7 +2,17 @@
 
 public class ParameterListSyntax : SyntaxNode
 {
-    public IList<ParameterSyntax> Parameters { get; } = new List<ParameterSyntax>();
+    public ParameterListSyntax()
+    {
+        Parameters = new List<ParameterSyntax>();
+    }
+
+    public ParameterListSyntax(IList<ParameterSyntax> parameters)
+    {
+        Parameters = parameters;
+    }
+
+    public IList<ParameterSyntax> Parameters { get; }
 
     public override string ToString() => string.Join(", ", Parameters);
 }

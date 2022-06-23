@@ -1,10 +1,17 @@
 grammar Jaktnat;
 
-file: syntax* EOF;
+file: declaration* EOF;
 
-syntax: function;
+declaration: function
+    | class;
 
 function: FUNCTION NAME LPAREN parameterList? RPAREN block;
+
+class: CLASS NAME LCURLY classMember* RCURLY;
+
+classMember: property;
+
+property: NAME variableDeclarationType;
 
 parameterList: parameter (COMMA parameter)*;
 
@@ -164,6 +171,7 @@ IS: 'is';
 IF: 'if';
 LET: 'let';
 FUNCTION: 'function';
+CLASS: 'class';
 THIS: 'this';
 WHILE: 'while';
 ANONYMOUS: 'anonymous';

@@ -7,7 +7,13 @@ internal static class VariableDeclarationILGenerator
 {
     public static void GenerateVariableDeclaration(CompilationContext context, ILProcessor il, VariableDeclarationSyntax varDecl)
     {
-        var variableType = il.Body.Method.DeclaringType.Module.ImportReference(varDecl.Type);
+        if (varDecl.Type is not RuntimeTypeReference { RuntimeType: Type runtimeType })
+        {
+            // TODO: support declared types
+            throw new CompilerError("Variable declaration type is not a runtime type");
+        }
+
+        var variableType = il.Body.Method.DeclaringType.Module.ImportReference(runtimeType);
         var variable = new VariableDefinition(variableType);
 
         il.Body.InitLocals = true;
