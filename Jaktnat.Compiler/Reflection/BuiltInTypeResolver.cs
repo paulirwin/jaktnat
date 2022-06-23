@@ -15,6 +15,7 @@ public static class BuiltInTypeResolver
         ["i16"] = typeof(short),
         ["i32"] = typeof(int),
         ["i64"] = typeof(long),
+        ["String"] = typeof(string),
     };
 
     public static Type? TryResolveType(string name)

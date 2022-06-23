@@ -1,0 +1,13 @@
+/// Expect:
+/// - output: "happiness\n"
+
+function main() {
+    if not (1 < 2) {
+        println("whoops")
+    }
+
+    let sadness = false
+    if not sadness {
+        println("happiness")
+    }
+}

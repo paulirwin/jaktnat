@@ -46,7 +46,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new FunctionSyntax(name, parameterList, body);
     }
 
-    public override SyntaxNode? VisitClass(JaktnatParser.ClassContext context)
+    public override SyntaxNode? VisitClassDeclaration(JaktnatParser.ClassDeclarationContext context)
     {
         var name = context.NAME().GetText();
 
@@ -85,7 +85,21 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Properties must have a declared type", context.start);
         }
 
-        return new PropertySyntax(name, type);
+        var modifiers = PropertyModifier.None;
+
+        if (context.propertyModifier() is { } propertyModifier)
+        {
+            if (propertyModifier.PUBLIC() != null)
+            {
+                modifiers |= PropertyModifier.Public;
+            }
+            else if (propertyModifier.PRIVATE() != null)
+            {
+                modifiers |= PropertyModifier.Private;
+            }
+        }
+
+        return new PropertySyntax(name, type, modifiers);
     }
 
     public override SyntaxNode? VisitParameterList(JaktnatParser.ParameterListContext context)

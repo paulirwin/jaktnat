@@ -2,15 +2,16 @@
 
 public class PropertySyntax : MemberDeclarationSyntax
 {
-    public PropertySyntax(string name, TypeIdentifierSyntax typeIdentifier)
+    public PropertySyntax(string name, TypeIdentifierSyntax typeIdentifier, PropertyModifier modifiers)
+        : base(name)
     {
-        Name = name;
         TypeIdentifier = typeIdentifier;
+        Modifiers = modifiers;
     }
 
-    public string Name { get; }
-
     public TypeIdentifierSyntax TypeIdentifier { get; }
+
+    public PropertyModifier Modifiers { get; }
 
     public TypeReference? Type { get; set; }
 

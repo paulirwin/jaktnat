@@ -18,6 +18,10 @@
     <None Remove="samples\basics\hello_number.jakt" />
     <None Remove="samples\basics\is.jakt" />
     <None Remove="samples\basics\opening_curly_brace_on_newline.jakt" />
+    <None Remove="samples\boolean\logical_and.jakt" />
+    <None Remove="samples\boolean\logical_not.jakt" />
+    <None Remove="samples\boolean\logical_or.jakt" />
+    <None Remove="samples\classes\class.jakt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,6 +37,10 @@
     <EmbeddedResource Include="samples\basics\hello_number.jakt" />
     <EmbeddedResource Include="samples\basics\is.jakt" />
     <EmbeddedResource Include="samples\basics\opening_curly_brace_on_newline.jakt" />
+    <EmbeddedResource Include="samples\boolean\logical_and.jakt" />
+    <EmbeddedResource Include="samples\boolean\logical_not.jakt" />
+    <EmbeddedResource Include="samples\boolean\logical_or.jakt" />
+    <EmbeddedResource Include="samples\classes\class.jakt" />
   </ItemGroup>
 
   <ItemGroup>

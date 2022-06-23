@@ -3,15 +3,17 @@ grammar Jaktnat;
 file: declaration* EOF;
 
 declaration: function
-    | class;
+    | classDeclaration;
 
 function: FUNCTION NAME LPAREN parameterList? RPAREN block;
 
-class: CLASS NAME LCURLY classMember* RCURLY;
+classDeclaration: CLASS NAME LCURLY classMember* RCURLY;
 
 classMember: property;
 
-property: NAME variableDeclarationType;
+property: propertyModifier? NAME variableDeclarationType;
+
+propertyModifier: PUBLIC | PRIVATE;
 
 parameterList: parameter (COMMA parameter)*;
 
@@ -170,6 +172,8 @@ ASQUESTION: 'as?';
 IS: 'is';
 IF: 'if';
 LET: 'let';
+PUBLIC: 'public';
+PRIVATE: 'private';
 FUNCTION: 'function';
 CLASS: 'class';
 THIS: 'this';

@@ -1,0 +1,14 @@
+/// Expect:
+/// - output: "Jane\n100\n"
+
+class Person {
+    public name: String
+    public age: i64
+}
+
+function main() {
+    let p = Person(name: "Jane", age: 100)
+
+    println("{}", p.name)
+    println("{}", p.age)
+}

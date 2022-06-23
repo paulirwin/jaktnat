@@ -2,4 +2,10 @@
 
 public abstract class MemberDeclarationSyntax : SyntaxNode
 {
+    protected MemberDeclarationSyntax(string name)
+    {
+        Name = name;
+    }
+
+    public string Name { get; }
 }

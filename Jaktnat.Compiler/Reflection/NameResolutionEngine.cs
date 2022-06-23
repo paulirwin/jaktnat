@@ -86,9 +86,26 @@ internal class NameResolutionEngine :
                 identifier.ExpressionType = members[0].GetType();
                 identifier.Target = members;
             }
+            else if (identifier.ParentTarget.ExpressionType is DeclaredTypeReference { DeclaredType: ClassDeclarationSyntax classDecl })
+            {
+                var member = classDecl.Members.FirstOrDefault(i => i.Name == identifier.Name);
+
+                if (member == null)
+                {
+                    throw new CompilerError($"Unable to resolve identifier {identifier.Name} on type {identifier.ParentTarget.ExpressionType}");
+                }
+
+                if (member is not PropertySyntax property)
+                {
+                    throw new NotImplementedException("Support for non-properties being used as identifiers is not yet implemented");
+                }
+
+                identifier.ExpressionType = property.Type;
+                identifier.Target = property;
+            }
             else
             {
-                throw new NotImplementedException("Need to support identifier expressions on declared types");
+                throw new CompilerError("Unknown type reference type");
             }
         }
         else if (identifier.ParentBlock.TryResolveDeclaration(identifier.Name, out var varDecl))
@@ -456,41 +473,47 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, MemberAccessSyntax node)
     {
-        if (node.Member.Target is not IList<MemberInfo> members)
+        if (node.Member.Target is IList<MemberInfo> members)
         {
-            throw new CompilerError("Member access expression has not been evaluated yet");
-        }
-
-        if (members.Count == 0)
-        {
-            throw new CompilerError("Member access expression has no members");
-        }
-
-        if (members.Count == 1)
-        {
-            if (members[0] is FieldInfo field)
+            if (members.Count == 0)
             {
-                node.ExpressionType = field.FieldType;
-                node.Member.Target = field;
+                throw new CompilerError("Member access expression has no members");
             }
-            else if (members[0] is PropertyInfo property)
+
+            if (members.Count == 1)
             {
-                node.ExpressionType = property.PropertyType;
-                node.Member.Target = property;
+                if (members[0] is FieldInfo field)
+                {
+                    node.ExpressionType = field.FieldType;
+                    node.Member.Target = field;
+                }
+                else if (members[0] is PropertyInfo property)
+                {
+                    node.ExpressionType = property.PropertyType;
+                    node.Member.Target = property;
+                }
+                else if (members[0] is MethodInfo)
+                {
+                    node.ExpressionType = typeof(MethodInfo);
+                }
             }
-            else if (members[0] is MethodInfo methodInfo)
+            else
             {
+                if (!members.All(i => i is MethodInfo))
+                {
+                    throw new CompilerError($"Expected method overloads, but found other types that match member {node.Member.Name}");
+                }
+
                 node.ExpressionType = typeof(MethodInfo);
             }
         }
+        else if (node.Member.Target is PropertySyntax property)
+        {
+            node.ExpressionType = property.Type;
+        }
         else
         {
-            if (!members.All(i => i is MethodInfo))
-            {
-                throw new CompilerError($"Expected method overloads, but found other types that match member {node.Member.Name}");
-            }
-
-            node.ExpressionType = typeof(MethodInfo);
+            throw new CompilerError("Member access expression has not been evaluated yet");
         }
     }
 
