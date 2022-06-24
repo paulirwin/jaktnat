@@ -1,0 +1,12 @@
+/// Expect:
+/// - output: "it is 80\n"
+
+function main() {
+    let x: i64 = 80;
+
+    if x == 100 {
+        println("true")
+    } else if x == 80 {
+        println("it is 80")
+    }
+}

@@ -50,10 +50,16 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             ClassDeclarationSyntax classDecl => VisitClassDeclaration(context, classDecl),
             BreakSyntax => SyntaxFactory.BreakStatement(),
             ContinueSyntax => SyntaxFactory.ContinueStatement(),
+            ReturnSyntax returnSyntax => VisitReturn(context, returnSyntax),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
     }
 
+    private CSharpSyntaxNode VisitReturn(CompilationContext context, ReturnSyntax returnSyntax)
+    {
+        // TODO: support returning expressions
+        return SyntaxFactory.ReturnStatement();
+    }
 
     private CSharpSyntaxNode VisitLoop(CompilationContext context, LoopSyntax loopSyntax)
     {

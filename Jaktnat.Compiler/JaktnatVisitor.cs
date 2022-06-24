@@ -176,7 +176,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         foreach (var child in context.children)
         {
-            if (child.GetText() is "{" or "}")
+            if (child.GetText() is "{" or "}" or ";")
                 continue;
 
             var childNode = Visit(child);
@@ -447,6 +447,11 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     public override SyntaxNode? VisitContinueStatement(JaktnatParser.ContinueStatementContext context)
     {
         return new ContinueSyntax();
+    }
+
+    public override SyntaxNode? VisitReturnStatement(JaktnatParser.ReturnStatementContext context)
+    {
+        return new ReturnSyntax();
     }
 
     public override SyntaxNode? VisitPrimaryExpr(JaktnatParser.PrimaryExprContext context)

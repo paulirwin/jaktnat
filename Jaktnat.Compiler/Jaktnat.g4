@@ -27,14 +27,17 @@ block: LCURLY statement* RCURLY;
 
 statement: 
     block 
-    | expression 
+    | expressionStatement
     | ifStatement 
     | letStatement 
     | mutStatement
     | whileStatement
     | loopStatement
     | breakStatement
-    | continueStatement;
+    | continueStatement
+    | returnStatement;
+
+expressionStatement: expression SEMICOLON?;
 
 ifStatement: IF expression block elseStatement?;
 
@@ -44,13 +47,15 @@ whileStatement: WHILE expression block;
 
 loopStatement: LOOP block;
 
-breakStatement: BREAK;
+breakStatement: BREAK SEMICOLON?;
 
-continueStatement: CONTINUE;
+continueStatement: CONTINUE SEMICOLON?;
 
-letStatement: LET variableDeclaration EQUAL expression;
+returnStatement: RETURN SEMICOLON?;
 
-mutStatement: MUT NAME variableDeclarationType? EQUAL expression;
+letStatement: LET variableDeclaration EQUAL expression SEMICOLON?;
+
+mutStatement: MUT NAME variableDeclarationType? EQUAL expression SEMICOLON?;
 
 variableDeclaration: MUTABLE? NAME variableDeclarationType?;
 
@@ -196,6 +201,7 @@ WHILE: 'while';
 LOOP: 'loop';
 BREAK: 'break';
 CONTINUE: 'continue';
+RETURN: 'return';
 ANONYMOUS: 'anonymous';
 MUT: 'mut';
 MUTABLE: 'mutable';
@@ -259,6 +265,7 @@ ASTERISK: '*';
 DIVIDE: '/';
 MODULO: '%';
 DOT: '.';
+SEMICOLON: ';';
 //EOL: '\n';
 
 fragment NUMBER_DIGIT: [0-9_];

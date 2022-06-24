@@ -24,7 +24,10 @@ public class VariableDeclarationSyntax : DeclarationSyntax
 
         sb.Append(Name);
 
-        // TODO: support types
+        if (TypeIdentifier != null)
+        {
+            sb.Append(": ").Append(TypeIdentifier);
+        }
 
         if (InitializerExpression != null)
         {
