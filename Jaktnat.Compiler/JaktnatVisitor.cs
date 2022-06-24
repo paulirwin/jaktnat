@@ -285,7 +285,25 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Unable to parse if block", context.Start);
         }
 
-        return new IfSyntax(cond, block);
+        ElseSyntax? elseNode = null;
+
+        if (context.elseStatement() is { } elseStatement)
+        {
+            if (elseStatement.block() is { } elseBlock && VisitBlock(elseBlock) is BlockSyntax elseBlockSyntax)
+            {
+                elseNode = new ElseSyntax(elseBlockSyntax);
+            }
+            else if (elseStatement.ifStatement() is { } elseIfStatement && VisitIfStatement(elseIfStatement) is IfSyntax elseIfSyntax)
+            {
+                elseNode = new ElseSyntax(elseIfSyntax);
+            }
+            else
+            {
+                throw new ParserError("Unable to parse else block", elseStatement.start);
+            }
+        }
+
+        return new IfSyntax(cond, block, elseNode);
     }
 
     public override SyntaxNode? VisitLetStatement(JaktnatParser.LetStatementContext context)

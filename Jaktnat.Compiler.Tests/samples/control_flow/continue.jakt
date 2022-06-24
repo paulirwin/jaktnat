@@ -1,0 +1,13 @@
+/// Expect:
+/// - output: "1\n3\n5\n7\n9\n"
+
+function main() {
+    mut i = 0
+    while i < 10 {
+        i++
+        if i % 2 == 0 {
+            continue
+        }
+        println("{}", i)
+    }
+}

@@ -36,7 +36,9 @@ statement:
     | breakStatement
     | continueStatement;
 
-ifStatement: IF expression block;
+ifStatement: IF expression block elseStatement?;
+
+elseStatement: ELSE (block | ifStatement);
 
 whileStatement: WHILE expression block;
 
@@ -183,6 +185,7 @@ ASBANG: 'as!';
 ASQUESTION: 'as?';
 IS: 'is';
 IF: 'if';
+ELSE: 'else';
 LET: 'let';
 PUBLIC: 'public';
 PRIVATE: 'private';

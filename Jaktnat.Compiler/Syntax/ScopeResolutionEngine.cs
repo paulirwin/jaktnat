@@ -24,6 +24,16 @@ internal static class ScopeResolutionEngine
             case IfSyntax ifSyntax:
                 ResolveScopes(ifSyntax.Condition, parentBlock);
                 ResolveScopes(ifSyntax.Body, parentBlock);
+
+                if (ifSyntax.ElseNode != null)
+                {
+                    ResolveScopes(ifSyntax.ElseNode, parentBlock);
+                }
+
+                break;
+
+            case ElseSyntax elseSyntax:
+                ResolveScopes(elseSyntax.Child, parentBlock);
                 break;
             case WhileSyntax whileSyntax:
                 ResolveScopes(whileSyntax.Condition, parentBlock);

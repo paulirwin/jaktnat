@@ -54,6 +54,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         };
     }
 
+
     private CSharpSyntaxNode VisitLoop(CompilationContext context, LoopSyntax loopSyntax)
     {
         if (Visit(context, loopSyntax.Body) is not CSBlockSyntax body)
@@ -277,7 +278,19 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             throw new CompilerError("Body did not evaluate to a block");
         }
 
-        return SyntaxFactory.IfStatement(condition, body);
+        ElseClauseSyntax? elseClause = null;
+
+        if (ifSyntax.ElseNode != null)
+        {
+            if (Visit(context, ifSyntax.ElseNode.Child) is not StatementSyntax elseStatement)
+            {
+                throw new CompilerError("Else clause must be a statement");
+            }
+
+            elseClause = SyntaxFactory.ElseClause(elseStatement);
+        }
+
+        return SyntaxFactory.IfStatement(condition, body).WithElse(elseClause);
     }
 
     private CSharpSyntaxNode VisitIdentifier(CompilationContext context, IdentifierExpressionSyntax identifier)

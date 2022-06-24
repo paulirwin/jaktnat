@@ -65,6 +65,15 @@ internal static class SyntaxVisitor
         {
             VisitInternal(obj, context, ifSyntax.Condition);
             VisitInternal(obj, context, ifSyntax.Body);
+
+            if (ifSyntax.ElseNode != null)
+            {
+                VisitInternal(obj, context, ifSyntax.ElseNode);
+            }
+        }
+        else if (node is ElseSyntax elseSyntax)
+        {
+            VisitInternal(obj, context, elseSyntax.Child);
         }
         else if (node is WhileSyntax whileSyntax)
         {
