@@ -6,17 +6,17 @@ public class CompilationUnitSyntax : AggregateSyntax
 {
     public IDictionary<string, object> Globals { get; } = new Dictionary<string, object>();
 
-    internal void DeclareFreeFunction(string name, FreeFunction function)
+    internal void DeclareFreeFunction(string name, Function function)
     {
         if (Globals.TryGetValue(name, out var global))
         {
             switch (global)
             {
-                case FreeFunction existingFunction:
-                    Globals[name] = FreeFunctionOverloadSet.FromPair(existingFunction, function);
+                case Function existingFunction:
+                    Globals[name] = FunctionOverloadSet.FromPair(existingFunction, function);
                     break;
-                case FreeFunctionOverloadSet set:
-                    set.FreeFunctions.Add(function);
+                case FunctionOverloadSet set:
+                    set.Functions.Add(function);
                     break;
                 default:
                     throw new CompilerError($"Cannot declare function {name} because it has already been declared in global scope as a {global.GetType()}");

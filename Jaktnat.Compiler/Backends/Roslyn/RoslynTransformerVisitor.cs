@@ -8,7 +8,7 @@ using BlockSyntax = Jaktnat.Compiler.Syntax.BlockSyntax;
 using ClassDeclarationSyntax = Jaktnat.Compiler.Syntax.ClassDeclarationSyntax;
 using CompilationUnitSyntax = Jaktnat.Compiler.Syntax.CompilationUnitSyntax;
 using SyntaxNode = Jaktnat.Compiler.Syntax.SyntaxNode;
-using RuntimeMethodInfoFreeFunction = Jaktnat.Compiler.ObjectModel.RuntimeMethodInfoFreeFunction;
+using RuntimeMethodInfoFunction = Jaktnat.Compiler.ObjectModel.RuntimeMethodInfoFunction;
 using LiteralExpressionSyntax = Jaktnat.Compiler.Syntax.LiteralExpressionSyntax;
 using VariableDeclarationSyntax = Jaktnat.Compiler.Syntax.VariableDeclarationSyntax;
 using ParameterSyntax = Jaktnat.Compiler.Syntax.ParameterSyntax;
@@ -51,14 +51,70 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             BreakSyntax => SyntaxFactory.BreakStatement(),
             ContinueSyntax => SyntaxFactory.ContinueStatement(),
             ReturnSyntax returnSyntax => VisitReturn(context, returnSyntax),
+            ThrowSyntax throwSyntax => VisitThrow(context, throwSyntax),
+            TrySyntax trySyntax => VisitTry(context, trySyntax),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
     }
 
+    private CSharpSyntaxNode VisitThrow(CompilationContext context, ThrowSyntax throwSyntax)
+    {
+        if (throwSyntax.Expression == null)
+        {
+            return SyntaxFactory.ThrowStatement();
+        }
+
+        if (Visit(context, throwSyntax.Expression) is not CSExpressionSyntax expression)
+        {
+            throw new CompilerError("Throw expression was invalid");
+        }
+
+        return SyntaxFactory.ThrowStatement(expression);
+    }
+
+    private CSharpSyntaxNode VisitTry(CompilationContext context, TrySyntax trySyntax)
+    {
+        var tryable = Visit(context, trySyntax.Tryable);
+        if (tryable is not CSBlockSyntax tryableBlock)
+        {
+            if (tryable is CSExpressionSyntax tryableExpression)
+            {
+                tryableBlock = SyntaxFactory.Block(SyntaxFactory.ExpressionStatement(tryableExpression));
+            }
+            else
+            {
+                throw new CompilerError("Try body did not evaluate to a block or expression");
+            }
+        }
+
+        var catches = new List<CatchClauseSyntax>();
+
+        if (Visit(context, trySyntax.Catch.CatchBlock) is not CSBlockSyntax catchBlock)
+        {
+            throw new CompilerError("Catch body did not evaluate to a block");
+        }
+
+        catches.Add(SyntaxFactory.CatchClause(
+            SyntaxFactory.CatchDeclaration(SyntaxFactory.ParseTypeName("Exception"), SyntaxFactory.ParseToken(trySyntax.Catch.CatchIdentifier.Name)),
+            null,
+            catchBlock));
+
+        return SyntaxFactory.TryStatement(tryableBlock, SyntaxFactory.List(catches), null);
+    }
+
     private CSharpSyntaxNode VisitReturn(CompilationContext context, ReturnSyntax returnSyntax)
     {
-        // TODO: support returning expressions
-        return SyntaxFactory.ReturnStatement();
+        if (returnSyntax.Expression == null)
+        {
+            return SyntaxFactory.ReturnStatement();
+        }
+
+        if (Visit(context, returnSyntax.Expression) is not CSExpressionSyntax expression)
+        {
+            throw new CompilerError("Return expression was invalid");
+        }
+
+        return SyntaxFactory.ReturnStatement(expression);
     }
 
     private CSharpSyntaxNode VisitLoop(CompilationContext context, LoopSyntax loopSyntax)
@@ -318,7 +374,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         
         return SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.ParseTypeName(type.FullName),
+                variableDeclaration.TypeIdentifier != null ? SyntaxFactory.ParseTypeName(type.FullName) : SyntaxFactory.ParseTypeName("var"),
                 SyntaxFactory.SeparatedList(new[] {
                     SyntaxFactory.VariableDeclarator(variableDeclaration.Name).WithInitializer(initializer != null ? SyntaxFactory.EqualsValueClause(initializer) : null)
                 })));
@@ -382,8 +438,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         {
             var target = call.MatchedMethod switch
             {
-                DeclaredFreeFunction declared => SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
-                RuntimeMethodInfoFreeFunction { Method: { DeclaringType: { } type } method } => SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
+                DeclaredFunction declared => SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
+                RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } => SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
                 _ => throw new NotImplementedException("Unexpected free function type")
             };
 
@@ -522,6 +578,13 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
 
         return SyntaxFactory.CompilationUnit()
+            .WithUsings(SyntaxFactory.List(new[]
+            {
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Collections.Generic")),
+                //SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Linq")),
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Jaktnat.Runtime")),
+            }))
             .WithMembers(SyntaxFactory.List(new CSMemberDeclarationSyntax[]
             {
                 SyntaxFactory.NamespaceDeclaration(SyntaxFactory.IdentifierName(context.AssemblyName))

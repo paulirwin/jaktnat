@@ -26,10 +26,16 @@ internal static class SyntaxVisitor
         }
         else if (node is FunctionSyntax function)
         {
+            if (function.ReturnTypeIdentifier != null)
+            {
+                VisitInternal(obj, context, function.ReturnTypeIdentifier);
+            }
+
             if (function.Parameters != null)
             {
                 VisitInternal(obj, context, function.Parameters);
             }
+
             VisitInternal(obj, context, function.Body);
         }
         else if (node is ParameterListSyntax parameterList)
@@ -103,6 +109,11 @@ internal static class SyntaxVisitor
             {
                 VisitInternal(obj, context, varDecl.InitializerExpression);
             }
+
+            if (varDecl.TypeIdentifier != null)
+            {
+                VisitInternal(obj, context, varDecl.TypeIdentifier);
+            }
         }
         else if (node is TypeCastSyntax typeCast)
         {
@@ -151,6 +162,33 @@ internal static class SyntaxVisitor
         else if (node is PropertySyntax property)
         {
             VisitInternal(obj, context, property.TypeIdentifier);
+        }
+        else if (node is TrySyntax trySyntax)
+        {
+            VisitInternal(obj, context, trySyntax.Tryable);
+            VisitInternal(obj, context, trySyntax.Catch);
+        }
+        else if (node is CatchSyntax catchSyntax)
+        {
+            VisitInternal(obj, context, catchSyntax.CatchIdentifier);
+            VisitInternal(obj, context, catchSyntax.CatchBlock);
+        }
+        else if (node is ScopeAccessSyntax scopeAccess)
+        {
+            VisitInternal(obj, context, scopeAccess.Scope);
+
+            // HACK: set parent target on member identifier
+            scopeAccess.Member.ParentTarget = scopeAccess.Scope;
+
+            VisitInternal(obj, context, scopeAccess.Member);
+        }
+        else if (node is ReturnSyntax { Expression: { } returnExpr })
+        {
+            VisitInternal(obj, context, returnExpr);
+        }
+        else if (node is ThrowSyntax { Expression: { } throwExpr })
+        {
+            VisitInternal(obj, context, throwExpr);
         }
 
         InvokeVisit(obj, context, node);

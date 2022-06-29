@@ -1,6 +1,6 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-internal class MemberAccessSyntax : ExpressionSyntax
+public class MemberAccessSyntax : ExpressionSyntax
 {
     public MemberAccessSyntax(ExpressionSyntax target, IdentifierExpressionSyntax member)
     {

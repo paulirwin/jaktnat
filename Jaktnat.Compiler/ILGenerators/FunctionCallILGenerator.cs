@@ -18,7 +18,7 @@ internal static class FunctionCallILGenerator
         MethodReference methodRef;
         var paramTypes = new List<Type>();
 
-        if (callSyntax.MatchedMethod is RuntimeMethodInfoFreeFunction { Method: MethodInfo method })
+        if (callSyntax.MatchedMethod is RuntimeMethodInfoFunction { Method: MethodInfo method })
         {
             methodRef = il.Body.Method.DeclaringType.Module.ImportReference(method);
 
@@ -34,7 +34,7 @@ internal static class FunctionCallILGenerator
                 paramTypes.Add(param.ParameterType);
             }
         }
-        else if (callSyntax.MatchedMethod is DeclaredFreeFunction declaredFreeFunction)
+        else if (callSyntax.MatchedMethod is DeclaredFunction declaredFreeFunction)
         {
             var programMethod = context.ProgramClass.Methods.FirstOrDefault(i => i.Name == declaredFreeFunction.FunctionSyntax.Name);
 

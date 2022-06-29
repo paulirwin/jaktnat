@@ -1,0 +1,36 @@
+/// Expect:
+/// - output: "Caught 1234\nCaught 6969\nCaught 5252\n"
+
+function notoss() throws -> i32 {
+    if not true {
+        throw Error::from_errno(123456)
+    }
+    return 5
+}
+
+function toss(anon value: i32) throws {
+    throw Error::from_errno(value)
+}
+
+function main() {
+    try toss(1234) catch error {
+        // Jaktnat change, was: println("Caught {}", error.code())
+        println("Caught {}", error.HResult)
+    }
+
+    try {
+        toss(6969)
+    } catch error {
+        // Jaktnat change, was: println("Caught {}", error.code())
+        println("Caught {}", error.HResult)
+    }
+
+    try {
+        notoss()
+        toss(5252)
+        println("FAIL")
+    } catch error {
+        // Jaktnat change, was: println("Caught {}", error.code())
+        println("Caught {}", error.HResult)
+    }
+}

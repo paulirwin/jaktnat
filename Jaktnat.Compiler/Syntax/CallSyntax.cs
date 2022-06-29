@@ -14,9 +14,9 @@ public class CallSyntax : ExpressionSyntax
 
     public IList<CallArgumentSyntax> Arguments { get; }
 
-    internal IList<FreeFunction>? PossibleMatchedMethods { get; set; }
+    internal IList<Function>? PossibleMatchedMethods { get; set; }
 
-    internal FreeFunction? MatchedMethod { get; set; }
+    internal Function? MatchedMethod { get; set; }
     
     internal IList<ConstructorSyntax>? PossibleMatchedConstructors { get; set; }
 

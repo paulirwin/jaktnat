@@ -50,6 +50,7 @@ internal static class ScopeResolutionEngine
                 {
                     ResolveScopes(functionSyntax.Parameters, functionSyntax.Body);
                 }
+
                 break;
             case CallArgumentSyntax callArgumentSyntax:
                 ResolveScopes(callArgumentSyntax.Expression, parentBlock);
@@ -115,13 +116,39 @@ internal static class ScopeResolutionEngine
                 }
 
                 break;
+            case TrySyntax trySyntax:
+                ResolveScopes(trySyntax.Tryable, parentBlock);
+                ResolveScopes(trySyntax.Catch, parentBlock);
+                break;
+            case CatchSyntax catchSyntax:
+                ResolveScopes(catchSyntax.CatchIdentifier, catchSyntax.CatchBlock);
+                ResolveScopes(catchSyntax.CatchBlock, parentBlock);
+                break;
+            case ThrowSyntax throwSyntax:
+                if (throwSyntax.Expression != null)
+                {
+                    ResolveScopes(throwSyntax.Expression, parentBlock);
+                }
+
+                break;
+            case ReturnSyntax returnSyntax:
+                if (returnSyntax.Expression != null)
+                {
+                    ResolveScopes(returnSyntax.Expression, parentBlock);
+                }
+
+                break;
+            case ScopeAccessSyntax scopeAccess:
+                ResolveScopes(scopeAccess.Scope, parentBlock);
+                ResolveScopes(scopeAccess.Member, parentBlock);
+                break;
             case IdentifierExpressionSyntax:
+            case CatchIdentifierSyntax:
             case LiteralExpressionSyntax:
             case ParameterSyntax:
             case PropertySyntax:
             case BreakSyntax:
             case ContinueSyntax:
-            case ReturnSyntax:
                 break; // nothing to do
             default:
                 throw new NotImplementedException($"Scope resolution not implemented for syntax type {node.GetType()}");

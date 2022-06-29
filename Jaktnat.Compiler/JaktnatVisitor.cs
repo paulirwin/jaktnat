@@ -43,7 +43,20 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             }
         }
 
-        return new FunctionSyntax(name, parameterList, body);
+        bool throws = context.THROWS() != null;
+        TypeIdentifierSyntax? returnType = null;
+
+        if (context.functionReturnType() is { } functionReturnType)
+        {
+            returnType = Visit(functionReturnType.type()) as TypeIdentifierSyntax;
+
+            if (returnType == null)
+            {
+                throw new ParserError($"Unable to parse return type for function {name}", functionReturnType.start);
+            }
+        }
+
+        return new FunctionSyntax(name, parameterList, body, throws, returnType);
     }
 
     public override SyntaxNode? VisitClassDeclaration(JaktnatParser.ClassDeclarationContext context)
@@ -243,19 +256,32 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     public override SyntaxNode? VisitNumber(JaktnatParser.NumberContext context)
     {
         var suffix = context.numberSuffix();
+        Type? suffixType = null;
 
         if (suffix != null)
         {
             var suffixText = suffix.GetText();
 
-            throw new NotImplementedException($"Need to implement number suffix for {suffixText}");
+            suffixType = suffixText switch
+            {
+                "i8" => typeof(sbyte),
+                "i16" => typeof(short),
+                "i32" => typeof(int),
+                "i64" => typeof(long),
+                "u8" => typeof(byte),
+                "u16" => typeof(ushort),
+                "u32" => typeof(uint),
+                "u64" => typeof(ulong),
+                "uz" => typeof(nuint),
+                _ => throw new ParserError($"Unknown number suffix: {suffixText}", suffix.start)
+            };
         }
-
+        
         var floating = context.FLOATING();
 
         if (floating != null)
         {
-            var value = double.Parse(context.GetText().Replace("_", ""));
+            var value = double.Parse(floating.GetText().Replace("_", ""));
 
             return new LiteralExpressionSyntax(value);
         }
@@ -264,9 +290,14 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         if (integer != null)
         {
-            var value = long.Parse(context.GetText().Replace("_", ""));
+            var integerText = integer.GetText().Replace("_", "");
 
-            // TODO: implement logic to scale down to i32/etc?
+            var value = suffixType switch
+            {
+                { } => Convert.ChangeType(integerText, suffixType),
+                _ => int.Parse(integerText)
+            };
+            
             return new LiteralExpressionSyntax(value);
         }
 
@@ -451,7 +482,19 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
     public override SyntaxNode? VisitReturnStatement(JaktnatParser.ReturnStatementContext context)
     {
-        return new ReturnSyntax();
+        ExpressionSyntax? expression = null;
+
+        if (context.expression() is { } expressionContext)
+        {
+            expression = Visit(expressionContext) as ExpressionSyntax;
+
+            if (expression == null)
+            {
+                throw new ParserError("Unable to parse return expression", expressionContext.start);
+            }
+        }
+
+        return new ReturnSyntax(expression);
     }
 
     public override SyntaxNode? VisitPrimaryExpr(JaktnatParser.PrimaryExprContext context)
@@ -751,5 +794,93 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
 
         return new ParenthesizedExpressionSyntax(expression);
+    }
+
+    public override SyntaxNode? VisitTryStatement(JaktnatParser.TryStatementContext context)
+    {
+        SyntaxNode tryable;
+
+        if (context.expression() is { } expressionTryable)
+        {
+            if (Visit(expressionTryable) is not ExpressionSyntax expressionTryableExpression)
+            {
+                throw new ParserError("Unable to parse try expression", expressionTryable.start);
+            }
+
+            tryable = expressionTryableExpression;
+        }
+        else if (context.block() is { } blockTryable)
+        {
+            if (Visit(blockTryable) is not BlockSyntax blockTryableBlock)
+            {
+                throw new ParserError("Unable to parse try block", blockTryable.start);
+            }
+
+            tryable = blockTryableBlock;
+        }
+        else
+        {
+            throw new ParserError("Unexpected tryable in try syntax", context.start);
+        }
+
+        var catchClause = context.catchClause();
+
+        if (catchClause == null)
+        {
+            throw new ParserError("Try statement missing catch clause", context.start);
+        }
+
+        if (Visit(catchClause.identifier()) is not IdentifierExpressionSyntax catchIdentifier)
+        {
+            throw new ParserError("Unable to parse catch clause identifier", catchClause.start);
+        }
+
+        if (Visit(catchClause.block()) is not BlockSyntax catchBlock)
+        {
+            throw new ParserError("Unable to parse catch clause block", catchClause.start);
+        }
+
+        var catchSyntax = new CatchSyntax(new CatchIdentifierSyntax(catchIdentifier.Name), catchBlock);
+
+        return new TrySyntax(tryable, catchSyntax);
+    }
+
+    public override SyntaxNode? VisitScopeAccess(JaktnatParser.ScopeAccessContext context)
+    {
+        var identifiers = context.identifier();
+
+        if (identifiers.Length != 2)
+        {
+            throw new ParserError("Unexpected number of identifiers in scope access", context.start);
+        }
+
+        if (Visit(identifiers[0]) is not IdentifierExpressionSyntax scopeIdentifier)
+        {
+            throw new ParserError("Unable to parse scope identifier", identifiers[0].start);
+        }
+
+        if (Visit(identifiers[1]) is not IdentifierExpressionSyntax memberIdentifier)
+        {
+            throw new ParserError("Unable to parse member identifier", identifiers[1].start);
+        }
+
+        return new ScopeAccessSyntax(scopeIdentifier, memberIdentifier);
+    }
+
+    public override SyntaxNode? VisitThrowStatement(JaktnatParser.ThrowStatementContext context)
+    {
+        ExpressionSyntax? throwable = null;
+
+        if (context.expression() is { } expressionContext)
+        {
+            throwable = Visit(expressionContext) as ExpressionSyntax;
+
+            if (throwable == null)
+            {
+                throw new ParserError("Unable to parse throw statement expression", expressionContext.start);
+            }
+        }
+
+        return new ThrowSyntax(throwable);
     }
 }

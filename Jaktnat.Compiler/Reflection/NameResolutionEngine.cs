@@ -23,8 +23,26 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<IndexerAccessSyntax>,
     ISyntaxVisitor<PropertySyntax>,
     ISyntaxVisitor<ClassDeclarationSyntax>,
-    ISyntaxVisitor<ParenthesizedExpressionSyntax>
+    ISyntaxVisitor<ParenthesizedExpressionSyntax>,
+    ISyntaxVisitor<ScopeAccessSyntax>,
+    ISyntaxVisitor<CatchIdentifierSyntax>
 {
+    private static readonly IReadOnlyList<Type> _signedWideningTypes = new[]
+    {
+        typeof(sbyte),
+        typeof(short),
+        typeof(int),
+        typeof(long),
+    };
+
+    private static readonly IReadOnlyList<Type> _unsignedWideningTypes = new[]
+    {
+        typeof(byte),
+        typeof(ushort),
+        typeof(uint),
+        typeof(ulong),
+    };
+
     public void Visit(CompilationContext context, CallArgumentSyntax node)
     {
         node.ArgumentType = node.Expression.ExpressionType;
@@ -54,7 +72,7 @@ internal class NameResolutionEngine :
 
         if (varDecl.TypeIdentifier != null)
         {
-            // TODO: resolve explicit type
+            varDecl.Type = varDecl.TypeIdentifier.Type;
         }
     }
 
@@ -119,11 +137,11 @@ internal class NameResolutionEngine :
             // TODO: consider free functions in runtime assembly below equal?
             switch (global)
             {
-                case FreeFunction function:
+                case Function function:
                     identifier.ExpressionType = typeof(MethodInfo);
                     identifier.Target = function;
                     break;
-                case FreeFunctionOverloadSet overloadSet:
+                case FunctionOverloadSet overloadSet:
                     identifier.ExpressionType = typeof(MethodInfo);
                     identifier.Target = overloadSet;
                     break;
@@ -135,6 +153,16 @@ internal class NameResolutionEngine :
                     throw new CompilerError($"Globals of type {global.GetType()} are not supported");
             }
         }
+        else if (BuiltInTypeResolver.TryResolveType(identifier.Name) is Type builtInType)
+        {
+            identifier.ExpressionType = builtInType;
+            identifier.Target = builtInType;
+        }
+        else if (RuntimeTypeResolver.TryResolveType(context, identifier.Name) is Type runtimeType)
+        {
+            identifier.ExpressionType = runtimeType;
+            identifier.Target = runtimeType;
+        }
         else
         {
             throw new CompilerError($"Unable to resolve identifier '{identifier.Name}'");
@@ -143,17 +171,34 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, CallSyntax node)
     {
-        if (node.Target is IdentifierExpressionSyntax { Target: FreeFunction function })
+        if (node.Target is IdentifierExpressionSyntax { Target: Function function })
         {
-            node.PossibleMatchedMethods = new List<FreeFunction> { function };
+            node.PossibleMatchedMethods = new List<Function> { function };
         }
-        else if (node.Target is IdentifierExpressionSyntax { Target: FreeFunctionOverloadSet overloadSet })
+        else if (node.Target is IdentifierExpressionSyntax { Target: FunctionOverloadSet overloadSet })
         {
-            node.PossibleMatchedMethods = overloadSet.FreeFunctions;
+            node.PossibleMatchedMethods = overloadSet.Functions;
         }
         else if (node.Target is IdentifierExpressionSyntax { Target: TypeDeclarationSyntax type })
         {
             node.PossibleMatchedConstructors = type.Constructors;
+        }
+        else if (node.Target is ScopeAccessSyntax { Member: { Target: MethodInfo method} })
+        {
+            node.PossibleMatchedMethods = new List<Function> { new RuntimeMethodInfoFunction(method) };
+        }
+        else if (node.Target is ScopeAccessSyntax { Member: { Target: IList<MemberInfo> members } })
+        {
+            if (!members.All(i => i is MethodInfo))
+            {
+                throw new CompilerError("Cannot call non-method members");
+            }
+
+            node.PossibleMatchedMethods = members
+                .Cast<MethodInfo>()
+                .Select(i => new RuntimeMethodInfoFunction(i))
+                .Cast<Function>()
+                .ToList();
         }
 
         ResolveOverloads(node);
@@ -169,34 +214,52 @@ internal class NameResolutionEngine :
 
         var argTypes = call.Arguments.Select(i => i.ArgumentType).ToArray();
 
-        if (call.PossibleMatchedMethods != null)
+        if (call.PossibleMatchedMethods is { Count: > 0 })
         {
-            if (ResolveMethodOverloads(call, argTypes, out var freeFunction) && freeFunction != null)
+            if ((ResolveMethodOverloads(call, argTypes, false, out var freeFunction) 
+                 || ResolveMethodOverloads(call, argTypes, true, out freeFunction)) 
+                && freeFunction != null)
             {
                 call.MatchedMethod = freeFunction;
                 call.ExpressionType = freeFunction.ReturnType;
                 return;
             }
 
-            throw new CompilerError($"Unable to resolve overload, ambiguous matches found: {string.Join(", ", call.PossibleMatchedMethods)}");
+            if (call.PossibleMatchedMethods.Count > 1)
+            {
+                throw new CompilerError($"Unable to resolve overload, ambiguous matches found: {string.Join(", ", call.PossibleMatchedMethods)}");
+            }
+            else
+            {
+                throw new CompilerError($"Unable to resolve function call, argument types do not match: {call.PossibleMatchedMethods[0]}");
+            }
         }
 
         if (call.PossibleMatchedConstructors is { Count: > 0 })
         {
-            if (ResolveConstructorOverloads(call, argTypes, out var constructor) && constructor != null)
+            if ((ResolveConstructorOverloads(call, argTypes, false, out var constructor) 
+                 || ResolveConstructorOverloads(call, argTypes, true, out constructor))
+                && constructor != null)
             {
                 call.MatchedConstructor = constructor;
                 call.ExpressionType = constructor.DeclaringType;
                 return;
             }
 
-            throw new CompilerError($"Unable to resolve overload, ambiguous constructor matches found: {string.Join(", ", call.PossibleMatchedConstructors)}");
+            if (call.PossibleMatchedConstructors.Count > 1)
+            {
+                throw new CompilerError($"Unable to resolve overload, ambiguous constructor matches found: {string.Join(", ", call.PossibleMatchedConstructors)}");
+            }
+            else
+            {
+                throw new CompilerError($"Unable to resolve constructor call, argument types do not match: {call.PossibleMatchedConstructors[0]}");
+            }
         }
 
         throw new CompilerError($"Unable to resolve overload");
     }
 
-    private static bool ResolveConstructorOverloads(CallSyntax call, TypeReference?[] argTypes, out ConstructorSyntax? constructor)
+    private static bool ResolveConstructorOverloads(CallSyntax call, TypeReference?[] argTypes, bool allowImplicitLiteralConversion, out ConstructorSyntax? constructor)
     {
         if (call.PossibleMatchedConstructors == null)
         {
@@ -221,9 +284,10 @@ internal class NameResolutionEngine :
                     .Select(i => i.Type).ToArray();
 
                 if (parameterTypes.Length == call.Arguments.Count
-                    && ParameterTypesAreCompatible(parameterTypes, argTypes))
+                    && ParameterTypesAreCompatible(parameterTypes, argTypes, allowImplicitLiteralConversion))
                 {
                     constructor = possibility;
+
                     return true;
                 }
             }
@@ -234,7 +298,7 @@ internal class NameResolutionEngine :
         return false;
     }
 
-    private static bool ResolveMethodOverloads(CallSyntax call, TypeReference?[] argTypes, out FreeFunction? freeFunction)
+    private static bool ResolveMethodOverloads(CallSyntax call, TypeReference?[] argTypes, bool allowImplicitLiteralConversion, out Function? freeFunction)
     {
         if (call.PossibleMatchedMethods == null)
         {
@@ -247,18 +311,18 @@ internal class NameResolutionEngine :
         // TODO: support overload precedence, i.e. for a String argument, prefer (String s) over (Object o)
         foreach (var possibility in call.PossibleMatchedMethods)
         {
-            if (possibility is RuntimeMethodInfoFreeFunction runtimeFunction)
+            if (possibility is RuntimeMethodInfoFunction runtimeFunction)
             {
                 var parameterTypes = runtimeFunction.Method.GetParameters().Select(i => new RuntimeTypeReference(i.ParameterType)).ToArray();
 
                 if (parameterTypes.Length == call.Arguments.Count
-                    && ParameterTypesAreCompatible(parameterTypes, argTypes))
+                    && ParameterTypesAreCompatible(parameterTypes, argTypes, allowImplicitLiteralConversion))
                 {
                     freeFunction = possibility;
                     return true;
                 }
             }
-            else if (possibility is DeclaredFreeFunction declaredFunction)
+            else if (possibility is DeclaredFunction declaredFunction)
             {
                 if (declaredFunction.FunctionSyntax.Parameters == null
                     && call.Arguments.Count == 0)
@@ -272,7 +336,7 @@ internal class NameResolutionEngine :
                         .Select(i => i.Type).ToArray();
 
                     if (parameterTypes.Length == call.Arguments.Count
-                        && ParameterTypesAreCompatible(parameterTypes, argTypes))
+                        && ParameterTypesAreCompatible(parameterTypes, argTypes, allowImplicitLiteralConversion))
                     {
                         freeFunction = possibility;
                         return true;
@@ -285,7 +349,7 @@ internal class NameResolutionEngine :
         return false;
     }
 
-    private static bool ParameterTypesAreCompatible(IReadOnlyList<TypeReference?> parameterTypes, IReadOnlyList<TypeReference?> argumentTypes)
+    private static bool ParameterTypesAreCompatible(IReadOnlyList<TypeReference?> parameterTypes, IReadOnlyList<TypeReference?> argumentTypes, bool allowImplicitLiteralConversion)
     {
         // TODO: support params
         if (parameterTypes.Count != argumentTypes.Count)
@@ -303,7 +367,9 @@ internal class NameResolutionEngine :
             var parameterType = parameterTypes[index];
             var argumentType = argumentTypes[index];
 
-            if (argumentType == null || parameterType == null || !ParameterTypeIsCompatible(parameterType, argumentType))
+            if (argumentType == null 
+                || parameterType == null 
+                || !ParameterTypeIsCompatible(parameterType, argumentType, allowImplicitLiteralConversion))
             {
                 return false;
             }
@@ -312,23 +378,75 @@ internal class NameResolutionEngine :
         return true;
     }
 
-    internal static bool ParameterTypeIsCompatible(TypeReference parameterType, TypeReference argumentType)
+    internal static bool ParameterTypeIsCompatible(TypeReference parameterType, TypeReference argumentType, bool allowImplicitLiteralConversion)
     {
         if (parameterType.Equals(typeof(object)))
         {
             return true;
         }
+
+        if (parameterType is DeclaredTypeReference declaredType 
+            && argumentType is DeclaredTypeReference argumentDeclaredType)
+        {
+            return declaredType.DeclaredType == argumentDeclaredType.DeclaredType; // TODO: support type inheritance / hierarchy
+        }
         
-        return parameterType is DeclaredTypeReference declaredType && argumentType is DeclaredTypeReference argumentDeclaredType
-            ?  declaredType.DeclaredType == argumentDeclaredType.DeclaredType // TODO: support type inheritance / hierarchy
-            : parameterType is RuntimeTypeReference { RuntimeType: Type runtimeType } && argumentType is RuntimeTypeReference { RuntimeType: Type argumentRuntimeType } && runtimeType.IsAssignableFrom(argumentRuntimeType);
+        return parameterType is RuntimeTypeReference { RuntimeType: Type parameterRuntimeType } 
+               && argumentType is RuntimeTypeReference { RuntimeType: Type argumentRuntimeType } 
+               && (parameterRuntimeType.IsAssignableFrom(argumentRuntimeType)
+               || PrimitivesAreImplicitlyConvertible(parameterRuntimeType, argumentRuntimeType)
+               || (allowImplicitLiteralConversion && LiteralsAreImplicitlyConvertible(parameterRuntimeType, argumentRuntimeType)));
+    }
+
+    private static bool LiteralsAreImplicitlyConvertible(Type parameterType, Type argumentType)
+    {
+        if (!parameterType.IsPrimitive || !argumentType.IsPrimitive)
+        {
+            return false;
+        }
+
+        int paramIndex = _signedWideningTypes.IndexOf(parameterType);
+        int argIndex = _signedWideningTypes.IndexOf(argumentType);
+
+        if (paramIndex >= 0 && argIndex >= 0)
+        {
+            // HACK: we're letting the C# compiler decide if this is valid
+            return paramIndex <= argIndex;
+        }
+
+        paramIndex = _unsignedWideningTypes.IndexOf(parameterType);
+        argIndex = _unsignedWideningTypes.IndexOf(argumentType);
+
+        // HACK: we're letting the C# compiler decide if this is valid
+        return paramIndex >= 0 && argIndex >= 0 && paramIndex <= argIndex;
+    }
+
+    private static bool PrimitivesAreImplicitlyConvertible(Type parameterType, Type argumentType)
+    {
+        if (!parameterType.IsPrimitive || !argumentType.IsPrimitive)
+        {
+            return false;
+        }
+
+        int paramIndex = _signedWideningTypes.IndexOf(parameterType);
+        int argIndex = _signedWideningTypes.IndexOf(argumentType);
+
+        if (paramIndex >= 0 && argIndex >= 0)
+        {
+            return paramIndex >= argIndex;
+        }
+
+        paramIndex = _unsignedWideningTypes.IndexOf(parameterType);
+        argIndex = _unsignedWideningTypes.IndexOf(argumentType);
+
+        return paramIndex >= 0 && argIndex >= 0 && paramIndex >= argIndex;
     }
 
     public void Visit(CompilationContext context, FunctionSyntax node)
     {
-        node.ReturnType = typeof(void); // TODO: name resolve function return type
+        node.ReturnType = node.ReturnTypeIdentifier != null ? node.ReturnTypeIdentifier.Type : typeof(void);
 
-        context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFreeFunction(node));
+        context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFunction(node));
     }
 
     public void Visit(CompilationContext context, ArrayTypeIdentifierSyntax node)
@@ -553,5 +671,62 @@ internal class NameResolutionEngine :
     public void Visit(CompilationContext context, ParenthesizedExpressionSyntax node)
     {
         node.ExpressionType = node.Expression.ExpressionType;
+    }
+
+    public void Visit(CompilationContext context, ScopeAccessSyntax node)
+    {
+        if (node.Member.Target is IList<MemberInfo> members)
+        {
+            if (members.Count == 0)
+            {
+                throw new CompilerError("Member access expression has no members");
+            }
+
+            if (members.Count == 1)
+            {
+                if (members[0] is FieldInfo field)
+                {
+                    node.ExpressionType = field.FieldType;
+                    node.Member.Target = field;
+                }
+                else if (members[0] is PropertyInfo property)
+                {
+                    node.ExpressionType = property.PropertyType;
+                    node.Member.Target = property;
+                }
+                else if (members[0] is MethodInfo)
+                {
+                    node.ExpressionType = typeof(MethodInfo);
+                }
+            }
+            else
+            {
+                if (!members.All(i => i is MethodInfo))
+                {
+                    throw new CompilerError($"Expected method overloads, but found other types that match member {node.Member.Name}");
+                }
+
+                node.ExpressionType = typeof(MethodInfo);
+            }
+        }
+        else if (node.Member.Target is PropertySyntax property)
+        {
+            node.ExpressionType = property.Type;
+        }
+        else
+        {
+            throw new CompilerError("Member access expression has not been evaluated yet");
+        }
+    }
+
+    public void Visit(CompilationContext context, CatchIdentifierSyntax node)
+    {
+        if (node.ParentBlock == null)
+        {
+            throw new CompilerError("Scope resolution for catch block not done properly, should always have a parent block");
+        }
+
+        node.ParentBlock.Declarations.Add(node.Name, node);
+        node.Type = typeof(Exception);
     }
 }

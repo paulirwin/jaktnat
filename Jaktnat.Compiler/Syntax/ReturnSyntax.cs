@@ -2,5 +2,12 @@
 
 public class ReturnSyntax : SyntaxNode
 {
-    public override string ToString() => "return"; // TODO: support returning expressions
+    public ReturnSyntax(ExpressionSyntax? expression)
+    {
+        Expression = expression;
+    }
+
+    public ExpressionSyntax? Expression { get; }
+
+    public override string ToString() => Expression != null ? $"return {Expression}" : "return";
 }

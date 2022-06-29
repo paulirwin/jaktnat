@@ -20,7 +20,13 @@ function bubble_sort(values: mutable [i64]) {
 }
 
 function main() {
-    let mutable v = [25, 13, 8, 1, 9, 22, 50, 2]
+    // Jaktnat change, was: let mutable v = [25, 13, 8, 1, 9, 22, 50, 2]
+    // Changed because literals are i32 currently and not implicitly convertible to i64 or vice versa
+    // Originally considered having literals be i64, but then you have the problem the other way...
+    // Better to stick to .NET/C# semantics of having non-prefixed integers be i32 instead.
+    // Therefore, we're giving each of these a suffix.
+    let mutable v = [25i64, 13i64, 8i64, 1i64, 9i64, 22i64, 50i64, 2i64]
+
     bubble_sort(values: v)
     let mutable i = 0
     while i < v.Length as! i64 {

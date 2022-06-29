@@ -5,7 +5,9 @@ file: declaration* EOF;
 declaration: function
     | classDeclaration;
 
-function: FUNCTION NAME LPAREN parameterList? RPAREN block;
+function: FUNCTION NAME LPAREN parameterList? RPAREN THROWS? functionReturnType? block;
+
+functionReturnType: ARROW type;
 
 classDeclaration: CLASS NAME LCURLY classMember* RCURLY;
 
@@ -17,7 +19,7 @@ propertyModifier: PUBLIC | PRIVATE;
 
 parameterList: parameter (COMMA parameter)*;
 
-parameter: ANONYMOUS? (thisParameter | namedParameter);
+parameter: (ANON | ANONYMOUS)? (thisParameter | namedParameter);
 
 thisParameter: MUTABLE? THIS;
 
@@ -29,6 +31,8 @@ statement:
     block 
     | expressionStatement
     | ifStatement 
+    | tryStatement
+    | throwStatement
     | letStatement 
     | mutStatement
     | whileStatement
@@ -41,6 +45,10 @@ expressionStatement: expression SEMICOLON?;
 
 ifStatement: IF expression block elseStatement?;
 
+tryStatement: TRY (expression | block) catchClause;
+
+catchClause: CATCH identifier block;
+
 elseStatement: ELSE (block | ifStatement);
 
 whileStatement: WHILE expression block;
@@ -51,7 +59,9 @@ breakStatement: BREAK SEMICOLON?;
 
 continueStatement: CONTINUE SEMICOLON?;
 
-returnStatement: RETURN SEMICOLON?;
+returnStatement: RETURN expression? SEMICOLON?;
+
+throwStatement: THROW expression? SEMICOLON?;
 
 letStatement: LET variableDeclaration EQUAL expression SEMICOLON?;
 
@@ -85,13 +95,16 @@ primaryExpr:
     operand
     | prefixUnaryOperator expression
     | typeName
-    | array;
+    | array
+    | scopeAccess;
 
 expressionList: expression (COMMA expression)*;
 
 parenthesizedExpression: LPAREN expression RPAREN;
 
 memberAccess: DOT identifier;
+
+scopeAccess: identifier DOUBLECOLON identifier;
 
 indexerAccess: LBRACKET expression RBRACKET;
 
@@ -191,6 +204,9 @@ ASQUESTION: 'as?';
 IS: 'is';
 IF: 'if';
 ELSE: 'else';
+TRY: 'try';
+CATCH: 'catch';
+THROW: 'throw';
 LET: 'let';
 PUBLIC: 'public';
 PRIVATE: 'private';
@@ -202,6 +218,7 @@ LOOP: 'loop';
 BREAK: 'break';
 CONTINUE: 'continue';
 RETURN: 'return';
+ANON: 'anon';
 ANONYMOUS: 'anonymous';
 MUT: 'mut';
 MUTABLE: 'mutable';
@@ -210,6 +227,8 @@ FALSE: 'false';
 AND: 'and';
 OR: 'or';
 NOT: 'not';
+THROWS: 'throws';
+
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;
 
@@ -221,6 +240,8 @@ fragment UNDERSCORE: '_';
 
 STRING: '"' ( ~'"' | '\\' '"' )* '"';
 
+DOUBLECOLON: '::';
+ARROW: '->';
 LPAREN: '(';
 RPAREN: ')';
 LCURLY: '{';

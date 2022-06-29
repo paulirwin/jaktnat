@@ -31,6 +31,7 @@
     <None Remove="samples\control_flow\if5.jakt" />
     <None Remove="samples\control_flow\loop.jakt" />
     <None Remove="samples\control_flow\return_nothing.jakt" />
+    <None Remove="samples\control_flow\try_catch.jakt" />
     <None Remove="samples\control_flow\while.jakt" />
     <None Remove="samples\control_flow\while2.jakt" />
     <None Remove="samples\control_flow\while3.jakt" />
@@ -63,6 +64,7 @@
     <EmbeddedResource Include="samples\control_flow\if5.jakt" />
     <EmbeddedResource Include="samples\control_flow\loop.jakt" />
     <EmbeddedResource Include="samples\control_flow\return_nothing.jakt" />
+    <EmbeddedResource Include="samples\control_flow\try_catch.jakt" />
     <EmbeddedResource Include="samples\control_flow\while.jakt" />
     <EmbeddedResource Include="samples\control_flow\while2.jakt" />
     <EmbeddedResource Include="samples\control_flow\while3.jakt" />
