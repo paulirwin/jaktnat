@@ -139,7 +139,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
     public override SyntaxNode? VisitParameter(JaktnatParser.ParameterContext context)
     {
-        var anonymous = context.ANONYMOUS() != null;
+        var anonymous = context.ANONYMOUS() != null || context.ANON() != null;
 
         if (context.namedParameter() is { } namedParameter)
         {
