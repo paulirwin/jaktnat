@@ -32,6 +32,10 @@ I was able to move much faster using Roslyn instead, so I've relegated the Mono.
 I may revisit that backend in the future.
 Note that Mono.Cecil was chosen over System.Reflection.Emit due to its ability to produce an assembly on disk, which is not possible in Emit as of .NET 6.
 
+Jaktnät uses [ANTLR](https://www.antlr.org/) as a parser/lexer generator.
+You can see the grammar in the `Jaktnat.g4` file. 
+The ANTLR NuGet package automatically builds the lexer and parser and other related files based on this grammar file when the Jaktnat.Compiler project is built.
+
 ## Language Support
 
 This section tracks the status of language features in Jaktnät.
