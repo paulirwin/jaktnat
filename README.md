@@ -1,4 +1,7 @@
 # Jaktnät
+
+[![.NET](https://github.com/paulirwin/jaktnat/actions/workflows/dotnet.yml/badge.svg)](https://github.com/paulirwin/jaktnat/actions/workflows/dotnet.yml)
+
 An experimental port of the [SerenityOS](https://www.serenityos.org/) [Jakt programming language](https://github.com/SerenityOS/jakt) to .NET.
 
 > **WARNING:** This is far from complete and very experimental!
