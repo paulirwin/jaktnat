@@ -42,6 +42,8 @@
     <EmbeddedResource Include="samples\basics\bubble_sort.jakt" />
     <EmbeddedResource Include="samples\basics\error.jakt" />
     <EmbeddedResource Include="samples\basics\float_literals.jakt" />
+    <None Remove="samples\classes\static_method.jakt" />
+    <EmbeddedResource Include="samples\classes\static_method.jakt" />
   </ItemGroup>
 
   <ItemGroup>

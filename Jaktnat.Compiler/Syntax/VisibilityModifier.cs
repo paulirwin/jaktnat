@@ -1,7 +1,7 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
 [Flags]
-public enum PropertyModifier
+public enum VisibilityModifier
 {
     None = 0,
     Public = 1 << 0,

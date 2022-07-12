@@ -142,6 +142,9 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(scopeAccess.Scope, parentBlock);
                 ResolveScopes(scopeAccess.Member, parentBlock);
                 break;
+            case MemberFunctionDeclarationSyntax memberFunction:
+                ResolveScopes(memberFunction.Function, parentBlock);
+                break;
             case IdentifierExpressionSyntax:
             case CatchIdentifierSyntax:
             case LiteralExpressionSyntax:

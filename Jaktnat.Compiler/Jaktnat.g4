@@ -5,17 +5,17 @@ file: declaration* EOF;
 declaration: function
     | classDeclaration;
 
-function: FUNCTION NAME LPAREN parameterList? RPAREN THROWS? functionReturnType? block;
+function: visibilityModifier? FUNCTION NAME LPAREN parameterList? RPAREN THROWS? functionReturnType? block;
 
 functionReturnType: ARROW type;
 
 classDeclaration: CLASS NAME LCURLY classMember* RCURLY;
 
-classMember: property;
+classMember: property | function;
 
-property: propertyModifier? NAME variableDeclarationType;
+property: visibilityModifier? NAME variableDeclarationType;
 
-propertyModifier: PUBLIC | PRIVATE;
+visibilityModifier: PUBLIC | PRIVATE;
 
 parameterList: parameter (COMMA parameter)*;
 

@@ -17,6 +17,8 @@ internal static class SyntaxVisitor
 
     private static void VisitInternal<T>(T obj, CompilationContext context, SyntaxNode node)
     {
+        InvokePreVisit(obj, context, node);
+        
         if (node is AggregateSyntax composite)
         {
             foreach (var child in composite.Children)
@@ -163,6 +165,10 @@ internal static class SyntaxVisitor
         {
             VisitInternal(obj, context, property.TypeIdentifier);
         }
+        else if (node is MemberFunctionDeclarationSyntax memberFunction)
+        {
+            VisitInternal(obj, context, memberFunction.Function);
+        }
         else if (node is TrySyntax trySyntax)
         {
             VisitInternal(obj, context, trySyntax.Tryable);
@@ -207,5 +213,20 @@ internal static class SyntaxVisitor
         var visitMethod = visitorType.GetMethod(nameof(ISyntaxVisitor<SyntaxNode>.Visit))!;
 
         visitMethod.Invoke(obj, new object?[] { context, node });
+    }
+    
+    private static void InvokePreVisit<T>(T obj, CompilationContext context, SyntaxNode node)
+    {
+        var nodeType = node.GetType();
+        var visitorType = VisitorType.MakeGenericType(nodeType);
+
+        if (!visitorType.IsAssignableFrom(typeof(T)))
+        {
+            return;
+        }
+
+        var preVisitMethod = visitorType.GetMethod(nameof(ISyntaxVisitor<SyntaxNode>.PreVisit))!;
+
+        preVisitMethod.Invoke(obj, new object?[] { context, node });
     }
 }

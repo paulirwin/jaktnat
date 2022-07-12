@@ -19,6 +19,7 @@ using CSParameterSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax;
 using CSExpressionSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax;
 using CSMemberDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MemberDeclarationSyntax;
 using CSClassDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax;
+using CSMethodDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax;
 
 namespace Jaktnat.Compiler.Backends.Roslyn;
 
@@ -48,6 +49,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             UnaryExpressionSyntax unary => VisitUnary(context, unary),
             ArraySyntax array => VisitArray(context, array),
             ClassDeclarationSyntax classDecl => VisitClassDeclaration(context, classDecl),
+            MemberFunctionDeclarationSyntax memberFunction => VisitMemberFunction(context, memberFunction),
             BreakSyntax => SyntaxFactory.BreakStatement(),
             ContinueSyntax => SyntaxFactory.ContinueStatement(),
             ReturnSyntax returnSyntax => VisitReturn(context, returnSyntax),
@@ -55,6 +57,16 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             TrySyntax trySyntax => VisitTry(context, trySyntax),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode VisitMemberFunction(CompilationContext context, MemberFunctionDeclarationSyntax memberFunction)
+    {
+        if (Visit(context, memberFunction.Function) is not CSMethodDeclarationSyntax method)
+        {
+            throw new CompilerError("Member function did not evaluate to a method");
+        }
+
+        return method;
     }
 
     private CSharpSyntaxNode VisitThrow(CompilationContext context, ThrowSyntax throwSyntax)
@@ -136,9 +148,20 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
         var parameters = classDecl.Constructors[0].Parameters.Parameters.Select(i => VisitParameter(context, i)).Cast<CSParameterSyntax>().ToList();
 
-        return SyntaxFactory.RecordDeclaration(SyntaxFactory.Token(SyntaxKind.RecordKeyword), classDecl.Name)
-            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)))
-            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        var otherMembers = classDecl.Members
+            .Where(i => i is not PropertySyntax)
+            .Select(i => Visit(context, i))
+            .Cast<CSMemberDeclarationSyntax>()
+            .ToList();
+
+        var record = SyntaxFactory.RecordDeclaration(SyntaxFactory.Token(SyntaxKind.RecordKeyword), classDecl.Name)
+            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)));
+        
+        return otherMembers.Count == 0
+            ? record.WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+            : record.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                .WithMembers(SyntaxFactory.List(otherMembers))
+                .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
     }
 
     private CSharpSyntaxNode VisitArray(CompilationContext context, ArraySyntax array)
@@ -436,10 +459,17 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         
         if (call.MatchedMethod != null)
         {
-            var target = call.MatchedMethod switch
+            CSExpressionSyntax target = call.MatchedMethod switch
             {
-                DeclaredFunction declared => SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
-                RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } => SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
+                DeclaredFunction { DeclaringType: null } declared => 
+                    SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
+                DeclaredFunction { DeclaringType: { } declaringType } declared => 
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression, 
+                        SyntaxFactory.IdentifierName(declaringType.Name), 
+                        SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name)),
+                RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } => 
+                    SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
                 _ => throw new NotImplementedException("Unexpected free function type")
             };
 

@@ -114,13 +114,21 @@ internal class NameResolutionEngine :
                     throw new CompilerError($"Unable to resolve identifier {identifier.Name} on type {identifier.ParentTarget.ExpressionType}");
                 }
 
-                if (member is not PropertySyntax property)
+                if (member is PropertySyntax property)
+                {
+                    identifier.ExpressionType = property.Type;
+                    identifier.Target = property;
+                }
+                else if (member is MemberFunctionDeclarationSyntax memberFunction)
+                {
+                    identifier.ExpressionType = typeof(MemberFunctionDeclarationSyntax);
+                    identifier.Target = memberFunction;
+                }
+                else
                 {
                     throw new NotImplementedException("Support for non-properties being used as identifiers is not yet implemented");
                 }
-
-                identifier.ExpressionType = property.Type;
-                identifier.Target = property;
+                
             }
             else
             {
@@ -146,7 +154,7 @@ internal class NameResolutionEngine :
                     identifier.Target = overloadSet;
                     break;
                 case TypeDeclarationSyntax typeDeclaration:
-                    identifier.ExpressionType = typeof(Type);
+                    identifier.ExpressionType = new DeclaredTypeReference(typeDeclaration);
                     identifier.Target = typeDeclaration;
                     break;
                 default:
@@ -181,7 +189,7 @@ internal class NameResolutionEngine :
         }
         else if (node.Target is IdentifierExpressionSyntax { Target: TypeDeclarationSyntax type })
         {
-            node.PossibleMatchedConstructors = type.Constructors;
+            node.PossibleMatchedConstructors = type.Constructors.Cast<ConstructorReferenceSyntax>().ToList();
         }
         else if (node.Target is ScopeAccessSyntax { Member: { Target: MethodInfo method} })
         {
@@ -199,6 +207,17 @@ internal class NameResolutionEngine :
                 .Select(i => new RuntimeMethodInfoFunction(i))
                 .Cast<Function>()
                 .ToList();
+        }
+        else if (node.Target is ScopeAccessSyntax
+                 {
+                     Scope: { Target: TypeDeclarationSyntax declaringType },
+                     Member: { Target: MemberFunctionDeclarationSyntax memberFunction }
+                 })
+        {
+            node.PossibleMatchedMethods = new List<Function>()
+            {
+                new DeclaredFunction(declaringType, memberFunction.Function),
+            };
         }
 
         ResolveOverloads(node);
@@ -256,10 +275,26 @@ internal class NameResolutionEngine :
             }
         }
 
+        if ((call.Target.ExpressionType is RuntimeTypeReference { RuntimeType: Type rt } && rt == typeof(Type)) 
+            || call.Target.ExpressionType is DeclaredTypeReference)
+        {
+            // HACKY HACK HACK.PI: Fix name resolution order to avoid having to late-bind
+            var argsAsParams = call.Arguments
+                .Select((i, index) => new ParameterSyntax(i.ParameterName != null, 
+                    i.ParameterName ?? $"arg{index}",
+                    true, new NamedTypeIdentifierSyntax(i.ArgumentType?.FullName ?? typeof(object).FullName!)))
+                .ToList();
+
+            call.MatchedConstructor =
+                new LateBoundConstructorReference(call.Target.ExpressionType, new ParameterListSyntax(argsAsParams));
+
+            return;
+        }
+
         throw new CompilerError($"Unable to resolve overload");
     }
 
-    private static bool ResolveConstructorOverloads(CallSyntax call, TypeReference?[] argTypes, bool allowImplicitLiteralConversion, out ConstructorSyntax? constructor)
+    private static bool ResolveConstructorOverloads(CallSyntax call, TypeReference?[] argTypes, bool allowImplicitLiteralConversion, out ConstructorReferenceSyntax? constructor)
     {
         if (call.PossibleMatchedConstructors == null)
         {
@@ -446,7 +481,7 @@ internal class NameResolutionEngine :
     {
         node.ReturnType = node.ReturnTypeIdentifier != null ? node.ReturnTypeIdentifier.Type : typeof(void);
 
-        context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFunction(node));
+        context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFunction(null, node));
     }
 
     public void Visit(CompilationContext context, ArrayTypeIdentifierSyntax node)
@@ -657,10 +692,13 @@ internal class NameResolutionEngine :
         node.Type = node.TypeIdentifier.Type;
     }
 
-    public void Visit(CompilationContext context, ClassDeclarationSyntax node)
+    public void PreVisit(CompilationContext context, ClassDeclarationSyntax node)
     {
         context.CompilationUnit.DeclareType(node.Name, node);
+    }
 
+    public void Visit(CompilationContext context, ClassDeclarationSyntax node)
+    {
         var parameters = node.Members.OfType<PropertySyntax>()
             .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier) { ParentBlock = node.ParentBlock, Type = i.Type })
             .ToList();
@@ -712,6 +750,10 @@ internal class NameResolutionEngine :
         else if (node.Member.Target is PropertySyntax property)
         {
             node.ExpressionType = property.Type;
+        }
+        else if (node.Member.Target is MemberFunctionDeclarationSyntax memberFunction)
+        {
+            node.ExpressionType = memberFunction.GetType();
         }
         else
         {

@@ -4,10 +4,13 @@ namespace Jaktnat.Compiler.ObjectModel;
 
 internal class DeclaredFunction : Function
 {
-    public DeclaredFunction(FunctionSyntax functionSyntax)
+    public DeclaredFunction(TypeDeclarationSyntax? declaringType, FunctionSyntax functionSyntax)
     {
+        DeclaringType = declaringType;
         FunctionSyntax = functionSyntax;
     }
+
+    public TypeDeclarationSyntax? DeclaringType { get; }
 
     public FunctionSyntax FunctionSyntax { get; }
 

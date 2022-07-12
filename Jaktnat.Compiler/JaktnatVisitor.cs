@@ -67,11 +67,13 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         foreach (var classMember in context.classMember())
         {
-            if (Visit(classMember) is not MemberDeclarationSyntax member)
+            var member = Visit(classMember) switch
             {
-                throw new ParserError("Unexpected result from visiting class member", classMember.start);
-            }
-
+                MemberDeclarationSyntax m => m,
+                FunctionSyntax f => new MemberFunctionDeclarationSyntax(f.Name, f),
+                _ => throw new ParserError("Unexpected result from visiting class member", classMember.start)
+            };
+            
             classSyntax.Members.Add(member);
         }
 
@@ -98,17 +100,17 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Properties must have a declared type", context.start);
         }
 
-        var modifiers = PropertyModifier.None;
+        var modifiers = VisibilityModifier.None;
 
-        if (context.propertyModifier() is { } propertyModifier)
+        if (context.visibilityModifier() is { } propertyModifier)
         {
             if (propertyModifier.PUBLIC() != null)
             {
-                modifiers |= PropertyModifier.Public;
+                modifiers |= VisibilityModifier.Public;
             }
             else if (propertyModifier.PRIVATE() != null)
             {
-                modifiers |= PropertyModifier.Private;
+                modifiers |= VisibilityModifier.Private;
             }
         }
 

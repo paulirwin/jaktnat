@@ -49,7 +49,7 @@ Language features:
 - [X] Function parameters
 - [X] Function return types
 - [X] Basic classes (as Records) with implicit constructors
-- [ ] Class static member functions
+- [X] Class static member functions
 - [ ] Class non-mutating member functions
 - [ ] Class mutating member functions
 - [ ] Structs

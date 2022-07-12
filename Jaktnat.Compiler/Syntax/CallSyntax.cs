@@ -18,9 +18,9 @@ public class CallSyntax : ExpressionSyntax
 
     internal Function? MatchedMethod { get; set; }
     
-    internal IList<ConstructorSyntax>? PossibleMatchedConstructors { get; set; }
+    internal IList<ConstructorReferenceSyntax>? PossibleMatchedConstructors { get; set; }
 
-    internal ConstructorSyntax? MatchedConstructor { get; set; }
+    internal ConstructorReferenceSyntax? MatchedConstructor { get; set; }
 
     public override string ToString() => $"{Target}({string.Join(", ", Arguments)})";
 }

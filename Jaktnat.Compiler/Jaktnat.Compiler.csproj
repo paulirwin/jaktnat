@@ -21,4 +21,8 @@
 	  <ProjectReference Include="..\Jaktnat.Runtime\Jaktnat.Runtime.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Content Include="Jaktnat.g4" />
+	</ItemGroup>
+
 </Project>

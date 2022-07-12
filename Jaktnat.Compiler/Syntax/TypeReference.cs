@@ -2,6 +2,8 @@
 
 public abstract class TypeReference : IEquatable<Type>, IEquatable<TypeDeclarationSyntax>
 {
+    public abstract string Name { get; }
+    
     public abstract string FullName { get; }
 
     public abstract bool IsValueType { get; }

@@ -9,6 +9,8 @@ public class RuntimeTypeReference : TypeReference
 
     public Type RuntimeType { get; }
 
+    public override string Name => RuntimeType.Name;
+    
     public override string FullName => RuntimeType.FullName ?? throw new InvalidOperationException("Runtime type does not have a full name");
     
     public override bool IsValueType => RuntimeType.IsValueType;

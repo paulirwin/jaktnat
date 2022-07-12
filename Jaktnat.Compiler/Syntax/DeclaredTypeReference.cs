@@ -9,6 +9,8 @@ public class DeclaredTypeReference : TypeReference
 
     public TypeDeclarationSyntax DeclaredType { get; }
 
+    public override string Name => DeclaredType.Name;
+    
     public override string FullName => DeclaredType.Name; // TODO: support namespaces
     
     public override bool IsValueType => DeclaredType.IsValueType;
