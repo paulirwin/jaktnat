@@ -53,7 +53,7 @@ Language features:
 - [X] Top-level functions
 - [X] Function parameters
 - [X] Function return types
-- [X] Basic classes (as Records) with implicit constructors
+- [X] Basic classes with implicit constructors
 - [X] Class static member functions
 - [ ] Class non-mutating member functions
 - [X] Class mutating member functions
@@ -156,7 +156,7 @@ Future non-Jakt possibilities to explore:
 
 ## Motivation
 
-I've been a fan (and very minor) contributor to SerenityOS for a while now, so when Jakt was announced I was intrigued.
+I've been a fan of (and very minor contributor to) SerenityOS for a while now, so when Jakt was announced I was intrigued.
 I appreciated its similarity to Swift, easy to understand syntax, and that it was, like SerenityOS, built from the ground up without legacy baggage.
 But most of all, I could wrap my head around all of its lexer, parser, and compiler code. 
 
