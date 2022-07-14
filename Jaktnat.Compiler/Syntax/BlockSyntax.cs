@@ -2,6 +2,8 @@
 
 public class BlockSyntax : AggregateSyntax
 {
+    public TypeDeclarationSyntax? DeclaringType { get; set; }
+    
     public IDictionary<string, DeclarationSyntax> Declarations { get; set; } = new Dictionary<string, DeclarationSyntax>();
 
     public bool TryResolveDeclaration(string name, out DeclarationSyntax declaration)
@@ -17,6 +19,24 @@ public class BlockSyntax : AggregateSyntax
         }
 
         return ParentBlock.TryResolveDeclaration(name, out declaration);
+    }
+
+    public bool TryResolveDeclaringType(out TypeDeclarationSyntax? declaringType)
+    {
+        declaringType = null;
+        
+        if (DeclaringType != null)
+        {
+            declaringType = DeclaringType;
+            return true;
+        }
+
+        if (ParentBlock == null)
+        {
+            return false;
+        }
+
+        return ParentBlock.TryResolveDeclaringType(out declaringType);
     }
 
     // TODO: support indentation

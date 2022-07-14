@@ -12,4 +12,6 @@ public abstract class ExpressionSyntax : SyntaxNode
     }
 
     public TypeReference? ExpressionType { get; set; }
+
+    public object? CompileTimeTarget { get; set; }
 }

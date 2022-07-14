@@ -18,7 +18,7 @@ This will produce a file called `my_file.exe` in the `bin` subfolder of the curr
 Note that these exe files are not yet self-executable, you must execute with the `dotnet` CLI:
 
 ```PowerShell
-dotnet my_file.exe
+dotnet bin/my_file.exe
 ```
 
 ## Overview
@@ -39,6 +39,11 @@ Jaktnät uses [ANTLR](https://www.antlr.org/) as a parser/lexer generator.
 You can see the grammar in the `Jaktnat.g4` file. 
 The ANTLR NuGet package automatically builds the lexer and parser and other related files based on this grammar file when the Jaktnat.Compiler project is built.
 
+## Editor Support
+
+As this is just a port of Jakt, currently the syntax is largely the same. 
+Therefore, you can get syntax highlighting in your favorite editor (VS Code, Vim, etc.) by following the instructions in the README of the editor-specific folder in the upstream Jakt repo: https://github.com/SerenityOS/jakt/tree/main/editors 
+
 ## Language Support
 
 This section tracks the status of language features in Jaktnät.
@@ -51,7 +56,7 @@ Language features:
 - [X] Basic classes (as Records) with implicit constructors
 - [X] Class static member functions
 - [ ] Class non-mutating member functions
-- [ ] Class mutating member functions
+- [X] Class mutating member functions
 - [ ] Structs
 - [ ] Enums
 - [X] Arrays

@@ -23,6 +23,10 @@ public class FunctionSyntax : BodySyntax
 
     public TypeReference? ReturnType { get; set; }
 
+    public bool HasThisParameter => Parameters != null
+                                    && Parameters.Parameters.Count > 0
+                                    && Parameters.Parameters[0] is ThisParameterSyntax;
+
     public override string ToString()
     {
         var sb = new StringBuilder("function ");

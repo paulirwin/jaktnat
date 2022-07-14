@@ -19,11 +19,11 @@ visibilityModifier: PUBLIC | PRIVATE;
 
 parameterList: parameter (COMMA parameter)*;
 
-parameter: (ANON | ANONYMOUS)? (thisParameter | namedParameter);
+parameter: thisParameter | namedParameter;
 
-thisParameter: MUTABLE? THIS;
+thisParameter: (MUT | MUTABLE)? THIS;
 
-namedParameter: NAME COLON MUTABLE? type;
+namedParameter: (ANON | ANONYMOUS)? NAME COLON MUTABLE? type;
 
 block: LCURLY statement* RCURLY;
 
@@ -93,10 +93,13 @@ expression:
 
 primaryExpr:
     operand
+    | thisExpression
     | prefixUnaryOperator expression
     | typeName
     | array
     | scopeAccess;
+    
+thisExpression: THIS;
 
 expressionList: expression (COMMA expression)*;
 

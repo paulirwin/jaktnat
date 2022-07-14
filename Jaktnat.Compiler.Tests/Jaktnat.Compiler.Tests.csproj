@@ -44,6 +44,10 @@
     <EmbeddedResource Include="samples\basics\float_literals.jakt" />
     <None Remove="samples\classes\static_method.jakt" />
     <EmbeddedResource Include="samples\classes\static_method.jakt" />
+    <None Remove="samples\classes\static_method_called_on_object_instance.jakt" />
+    <EmbeddedResource Include="samples\classes\static_method_called_on_object_instance.jakt" />
+    <None Remove="samples\classes\method.jakt" />
+    <EmbeddedResource Include="samples\classes\method.jakt" />
   </ItemGroup>
 
   <ItemGroup>

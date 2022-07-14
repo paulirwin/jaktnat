@@ -152,6 +152,7 @@ internal static class ScopeResolutionEngine
             case PropertySyntax:
             case BreakSyntax:
             case ContinueSyntax:
+            case ThisExpressionSyntax:
                 break; // nothing to do
             default:
                 throw new NotImplementedException($"Scope resolution not implemented for syntax type {node.GetType()}");

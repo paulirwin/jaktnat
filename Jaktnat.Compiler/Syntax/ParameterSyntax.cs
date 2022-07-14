@@ -4,7 +4,7 @@ namespace Jaktnat.Compiler.Syntax;
 
 public class ParameterSyntax : DeclarationSyntax
 {
-    public ParameterSyntax(bool anonymous, string name, bool mutable, TypeIdentifierSyntax typeIdentifier)
+    public ParameterSyntax(bool anonymous, string name, bool mutable, TypeIdentifierSyntax? typeIdentifier)
         : base(name, typeIdentifier, mutable)
     {
         Anonymous = anonymous;

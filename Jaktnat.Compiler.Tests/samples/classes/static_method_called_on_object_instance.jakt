@@ -1,0 +1,16 @@
+/// Expect:
+/// - error: "Cannot call static method on an instance of an object"
+
+// Jaktnat TODO: this effectively passes in that it throws an error, but needs to actually 
+//               validate against possible static methods to throw a more precise error
+
+class Foo {
+    public function bar() {
+        println("I am a static method")
+    }
+}
+
+function main() {
+    let foo = Foo()
+    foo.bar()
+}

@@ -25,7 +25,9 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<ClassDeclarationSyntax>,
     ISyntaxVisitor<ParenthesizedExpressionSyntax>,
     ISyntaxVisitor<ScopeAccessSyntax>,
-    ISyntaxVisitor<CatchIdentifierSyntax>
+    ISyntaxVisitor<CatchIdentifierSyntax>,
+    ISyntaxVisitor<MemberFunctionDeclarationSyntax>,
+    ISyntaxVisitor<ThisExpressionSyntax>
 {
     private static readonly IReadOnlyList<Type> _signedWideningTypes = new[]
     {
@@ -103,7 +105,7 @@ internal class NameResolutionEngine :
                 }
 
                 identifier.ExpressionType = members[0].GetType();
-                identifier.Target = members;
+                identifier.CompileTimeTarget = members;
             }
             else if (identifier.ParentTarget.ExpressionType is DeclaredTypeReference { DeclaredType: ClassDeclarationSyntax classDecl })
             {
@@ -117,12 +119,12 @@ internal class NameResolutionEngine :
                 if (member is PropertySyntax property)
                 {
                     identifier.ExpressionType = property.Type;
-                    identifier.Target = property;
+                    identifier.CompileTimeTarget = property;
                 }
                 else if (member is MemberFunctionDeclarationSyntax memberFunction)
                 {
                     identifier.ExpressionType = typeof(MemberFunctionDeclarationSyntax);
-                    identifier.Target = memberFunction;
+                    identifier.CompileTimeTarget = memberFunction;
                 }
                 else
                 {
@@ -138,7 +140,7 @@ internal class NameResolutionEngine :
         else if (identifier.ParentBlock.TryResolveDeclaration(identifier.Name, out var varDecl))
         {
             identifier.ExpressionType = varDecl.Type;
-            identifier.Target = varDecl;
+            identifier.CompileTimeTarget = varDecl;
         }
         else if (context.CompilationUnit.Globals.TryGetValue(identifier.Name, out var global))
         {
@@ -147,15 +149,15 @@ internal class NameResolutionEngine :
             {
                 case Function function:
                     identifier.ExpressionType = typeof(MethodInfo);
-                    identifier.Target = function;
+                    identifier.CompileTimeTarget = function;
                     break;
                 case FunctionOverloadSet overloadSet:
                     identifier.ExpressionType = typeof(MethodInfo);
-                    identifier.Target = overloadSet;
+                    identifier.CompileTimeTarget = overloadSet;
                     break;
                 case TypeDeclarationSyntax typeDeclaration:
                     identifier.ExpressionType = new DeclaredTypeReference(typeDeclaration);
-                    identifier.Target = typeDeclaration;
+                    identifier.CompileTimeTarget = typeDeclaration;
                     break;
                 default:
                     throw new CompilerError($"Globals of type {global.GetType()} are not supported");
@@ -164,12 +166,12 @@ internal class NameResolutionEngine :
         else if (BuiltInTypeResolver.TryResolveType(identifier.Name) is Type builtInType)
         {
             identifier.ExpressionType = builtInType;
-            identifier.Target = builtInType;
+            identifier.CompileTimeTarget = builtInType;
         }
         else if (RuntimeTypeResolver.TryResolveType(context, identifier.Name) is Type runtimeType)
         {
             identifier.ExpressionType = runtimeType;
-            identifier.Target = runtimeType;
+            identifier.CompileTimeTarget = runtimeType;
         }
         else
         {
@@ -179,44 +181,25 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, CallSyntax node)
     {
-        if (node.Target is IdentifierExpressionSyntax { Target: Function function })
+        if (node.Target.ExpressionType is DeclaredTypeReference constructorTypeReference)
         {
-            node.PossibleMatchedMethods = new List<Function> { function };
-        }
-        else if (node.Target is IdentifierExpressionSyntax { Target: FunctionOverloadSet overloadSet })
-        {
-            node.PossibleMatchedMethods = overloadSet.Functions;
-        }
-        else if (node.Target is IdentifierExpressionSyntax { Target: TypeDeclarationSyntax type })
-        {
-            node.PossibleMatchedConstructors = type.Constructors.Cast<ConstructorReferenceSyntax>().ToList();
-        }
-        else if (node.Target is ScopeAccessSyntax { Member: { Target: MethodInfo method} })
-        {
-            node.PossibleMatchedMethods = new List<Function> { new RuntimeMethodInfoFunction(method) };
-        }
-        else if (node.Target is ScopeAccessSyntax { Member: { Target: IList<MemberInfo> members } })
-        {
-            if (!members.All(i => i is MethodInfo))
-            {
-                throw new CompilerError("Cannot call non-method members");
-            }
-
-            node.PossibleMatchedMethods = members
-                .Cast<MethodInfo>()
-                .Select(i => new RuntimeMethodInfoFunction(i))
-                .Cast<Function>()
+            node.PossibleMatchedConstructors = constructorTypeReference.DeclaredType.Constructors
+                .Cast<ConstructorReferenceSyntax>()
                 .ToList();
         }
-        else if (node.Target is ScopeAccessSyntax
-                 {
-                     Scope: { Target: TypeDeclarationSyntax declaringType },
-                     Member: { Target: MemberFunctionDeclarationSyntax memberFunction }
-                 })
+        else
         {
-            node.PossibleMatchedMethods = new List<Function>()
+            // HACK.PI: this definitely needs improvement, i.e. for delegate invocation, but should work for simple uses
+            if (node.Target is MemberAccessSyntax memberAccess)
             {
-                new DeclaredFunction(declaringType, memberFunction.Function),
+                node.CompileTimeTarget = memberAccess.Target;
+            }
+            
+            node.PossibleMatchedMethods = node.Target.CompileTimeTarget switch
+            {
+                Function function => new List<Function> { function },
+                FunctionOverloadSet overloadSet => overloadSet.Functions,
+                _ => node.PossibleMatchedMethods
             };
         }
 
@@ -228,7 +211,7 @@ internal class NameResolutionEngine :
         if (call.PossibleMatchedMethods == null 
             && call.PossibleMatchedConstructors == null)
         {
-            throw new InvalidOperationException("Overload resolution called before name resolution");
+            throw new InvalidOperationException("Unable to resolve call target");
         }
 
         var argTypes = call.Arguments.Select(i => i.ArgumentType).ToArray();
@@ -359,15 +342,20 @@ internal class NameResolutionEngine :
             }
             else if (possibility is DeclaredFunction declaredFunction)
             {
-                if (declaredFunction.FunctionSyntax.Parameters == null
+                if ((declaredFunction.FunctionSyntax.Parameters == null 
+                     || declaredFunction.FunctionSyntax.Parameters.Parameters.Count == 0
+                     || (declaredFunction.FunctionSyntax.Parameters.Parameters.Count == 1
+                     && declaredFunction.FunctionSyntax.Parameters.Parameters[0] is ThisParameterSyntax))
                     && call.Arguments.Count == 0)
                 {
                     freeFunction = possibility;
                     return true;
                 }
-                else if (call.Arguments.Count > 0 && declaredFunction.FunctionSyntax.Parameters is { } parameters)
+                
+                if (call.Arguments.Count > 0 
+                    && declaredFunction.FunctionSyntax.Parameters is { } parameters)
                 {
-                    var parameterTypes = parameters.Parameters
+                    var parameterTypes = parameters.GetNonThisParameters()
                         .Select(i => i.Type).ToArray();
 
                     if (parameterTypes.Length == call.Arguments.Count
@@ -517,6 +505,17 @@ internal class NameResolutionEngine :
             throw new CompilerError("Expected parameter to have a block");
         }
 
+        if (node is ThisParameterSyntax thisParameter)
+        {
+            if (thisParameter.DeclaringType == null)
+            {
+                throw new CompilerError("`this` did not resolve to anything");
+            }
+
+            node.Type = thisParameter.DeclaringType;
+            return;
+        }
+
         if (node.TypeIdentifier == null)
         {
             throw new CompilerError("Expected type identifier in parameter declaration");
@@ -627,7 +626,7 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, MemberAccessSyntax node)
     {
-        if (node.Member.Target is IList<MemberInfo> members)
+        if (node.Member.CompileTimeTarget is IList<MemberInfo> members)
         {
             if (members.Count == 0)
             {
@@ -639,16 +638,24 @@ internal class NameResolutionEngine :
                 if (members[0] is FieldInfo field)
                 {
                     node.ExpressionType = field.FieldType;
-                    node.Member.Target = field;
+                    node.Member.CompileTimeTarget = field;
+                    node.CompileTimeTarget = field;
                 }
                 else if (members[0] is PropertyInfo property)
                 {
                     node.ExpressionType = property.PropertyType;
-                    node.Member.Target = property;
+                    node.Member.CompileTimeTarget = property;
+                    node.CompileTimeTarget = property;
                 }
-                else if (members[0] is MethodInfo)
+                else if (members[0] is MethodInfo method)
                 {
                     node.ExpressionType = typeof(MethodInfo);
+                    node.CompileTimeTarget = new RuntimeMethodInfoFunction(method);
+                }
+                else
+                {
+                    throw new NotImplementedException(
+                        $"Unsure how to handle scope resolution for a {members[0].GetType()}");
                 }
             }
             else
@@ -659,11 +666,20 @@ internal class NameResolutionEngine :
                 }
 
                 node.ExpressionType = typeof(MethodInfo);
+                node.CompileTimeTarget = new FunctionOverloadSet(
+                    members.Select(i => new RuntimeMethodInfoFunction((MethodInfo)i))
+                );
             }
         }
-        else if (node.Member.Target is PropertySyntax property)
+        else if (node.Member.CompileTimeTarget is PropertySyntax property)
         {
             node.ExpressionType = property.Type;
+            node.CompileTimeTarget = property;
+        }
+        else if (node.Member.CompileTimeTarget is MemberFunctionDeclarationSyntax memberFunction)
+        {
+            node.ExpressionType = typeof(MethodInfo);
+            node.CompileTimeTarget = new DeclaredFunction(memberFunction.DeclaringType, memberFunction.Function);
         }
         else
         {
@@ -695,6 +711,11 @@ internal class NameResolutionEngine :
     public void PreVisit(CompilationContext context, ClassDeclarationSyntax node)
     {
         context.CompilationUnit.DeclareType(node.Name, node);
+
+        foreach (var member in node.Members)
+        {
+            member.DeclaringType = node;
+        }
     }
 
     public void Visit(CompilationContext context, ClassDeclarationSyntax node)
@@ -713,7 +734,7 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, ScopeAccessSyntax node)
     {
-        if (node.Member.Target is IList<MemberInfo> members)
+        if (node.Member.CompileTimeTarget is IList<MemberInfo> members)
         {
             if (members.Count == 0)
             {
@@ -725,16 +746,24 @@ internal class NameResolutionEngine :
                 if (members[0] is FieldInfo field)
                 {
                     node.ExpressionType = field.FieldType;
-                    node.Member.Target = field;
+                    node.Member.CompileTimeTarget = field;
+                    node.CompileTimeTarget = field;
                 }
                 else if (members[0] is PropertyInfo property)
                 {
                     node.ExpressionType = property.PropertyType;
-                    node.Member.Target = property;
+                    node.Member.CompileTimeTarget = property;
+                    node.CompileTimeTarget = property;
                 }
-                else if (members[0] is MethodInfo)
+                else if (members[0] is MethodInfo method)
                 {
                     node.ExpressionType = typeof(MethodInfo);
+                    node.CompileTimeTarget = new RuntimeMethodInfoFunction(method);
+                }
+                else
+                {
+                    throw new NotImplementedException(
+                        $"Unsure how to handle scope resolution for a {members[0].GetType()}");
                 }
             }
             else
@@ -745,15 +774,20 @@ internal class NameResolutionEngine :
                 }
 
                 node.ExpressionType = typeof(MethodInfo);
+                node.CompileTimeTarget = new FunctionOverloadSet(
+                    members.Select(i => new RuntimeMethodInfoFunction((MethodInfo)i))
+                );
             }
         }
-        else if (node.Member.Target is PropertySyntax property)
+        else if (node.Member.CompileTimeTarget is PropertySyntax property)
         {
             node.ExpressionType = property.Type;
+            node.CompileTimeTarget = property;
         }
-        else if (node.Member.Target is MemberFunctionDeclarationSyntax memberFunction)
+        else if (node.Member.CompileTimeTarget is MemberFunctionDeclarationSyntax memberFunction)
         {
             node.ExpressionType = memberFunction.GetType();
+            node.CompileTimeTarget = new DeclaredFunction(memberFunction.DeclaringType, memberFunction.Function);
         }
         else
         {
@@ -770,5 +804,42 @@ internal class NameResolutionEngine :
 
         node.ParentBlock.Declarations.Add(node.Name, node);
         node.Type = typeof(Exception);
+    }
+
+    public void Visit(CompilationContext context, MemberFunctionDeclarationSyntax node)
+    {
+    }
+
+    public void PreVisit(CompilationContext context, MemberFunctionDeclarationSyntax node)
+    {
+        node.Function.Body.DeclaringType = node.DeclaringType; // for `this` expression
+        
+        if (node.Function.Parameters == null)
+        {
+            return;
+        }
+        
+        foreach (var parameter in node.Function.Parameters.Parameters)
+        {
+            if (parameter is ThisParameterSyntax thisParameter)
+            {
+                thisParameter.DeclaringType = node.DeclaringType;
+            }
+        }
+    }
+
+    public void Visit(CompilationContext context, ThisExpressionSyntax node)
+    {
+        if (node.ParentBlock == null)
+        {
+            throw new CompilerError("Cannot resolve `this` without a parent block");
+        }
+
+        if (!node.ParentBlock.TryResolveDeclaringType(out var declaringType) || declaringType == null)
+        {
+            throw new CompilerError("Unable to resolve declaring type for `this` expression");
+        }
+
+        node.ExpressionType = declaringType;
     }
 }

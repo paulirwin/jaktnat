@@ -141,10 +141,10 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
     public override SyntaxNode? VisitParameter(JaktnatParser.ParameterContext context)
     {
-        var anonymous = context.ANONYMOUS() != null || context.ANON() != null;
-
         if (context.namedParameter() is { } namedParameter)
         {
+            var anonymous = namedParameter.ANONYMOUS() != null || namedParameter.ANON() != null;
+
             var name = namedParameter.NAME().GetText();
             var mutable = namedParameter.MUTABLE() != null;
 
@@ -155,9 +155,15 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
             return new ParameterSyntax(anonymous, name, mutable, type);
         }
+        else if (context.thisParameter() is { } thisParameter)
+        {
+            var mutable = thisParameter.MUT() != null || thisParameter.MUTABLE() != null;
+
+            return new ThisParameterSyntax(mutable);
+        }
         else
         {
-            throw new NotImplementedException("Need to support `this` parameter");
+            throw new NotImplementedException("Unknown parameter type");
         }
     }
 
@@ -556,6 +562,11 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
 
         return base.VisitExpression(context);
+    }
+
+    public override SyntaxNode? VisitThisExpression(JaktnatParser.ThisExpressionContext context)
+    {
+        return new ThisExpressionSyntax();
     }
 
     private SyntaxNode VisitMemberAccessExpression(JaktnatParser.ExpressionContext context, JaktnatParser.MemberAccessContext memberAccess)

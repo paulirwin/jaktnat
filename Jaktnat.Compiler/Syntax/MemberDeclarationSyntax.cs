@@ -8,4 +8,6 @@ public abstract class MemberDeclarationSyntax : SyntaxNode
     }
 
     public string Name { get; }
+    
+    public TypeDeclarationSyntax? DeclaringType { get; set; }
 }
