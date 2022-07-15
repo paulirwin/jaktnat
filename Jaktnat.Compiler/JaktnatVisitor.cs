@@ -56,7 +56,21 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             }
         }
 
-        return new FunctionSyntax(name, parameterList, body, throws, returnType);
+        var modifier = VisibilityModifier.None;
+
+        if (context.visibilityModifier() is { } visibilityModifier)
+        {
+            if (visibilityModifier.PUBLIC() != null)
+            {
+                modifier = VisibilityModifier.Public;
+            }
+            else if (visibilityModifier.PRIVATE() != null)
+            {
+                modifier = VisibilityModifier.Private;
+            }
+        }
+
+        return new FunctionSyntax(modifier, name, parameterList, body, throws, returnType);
     }
 
     public override SyntaxNode? VisitClassDeclaration(JaktnatParser.ClassDeclarationContext context)

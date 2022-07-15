@@ -4,15 +4,23 @@ namespace Jaktnat.Compiler.Syntax;
 
 public class FunctionSyntax : BodySyntax
 {
-    public FunctionSyntax(string name, ParameterListSyntax? parameters, BlockSyntax body, bool throws, TypeIdentifierSyntax? returnTypeIdentifier)
+    public FunctionSyntax(VisibilityModifier visibilityModifier,
+        string name, 
+        ParameterListSyntax? parameters, 
+        BlockSyntax body, 
+        bool throws, 
+        TypeIdentifierSyntax? returnTypeIdentifier)
         : base(body)
     {
+        VisibilityModifier = visibilityModifier;
         Name = name;
         Parameters = parameters;
         Throws = throws;
         ReturnTypeIdentifier = returnTypeIdentifier;
     }
 
+    public VisibilityModifier VisibilityModifier { get; }
+    
     public string Name { get; }
 
     public ParameterListSyntax? Parameters { get; }

@@ -613,18 +613,30 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
         
         string name = function.Name;
+        bool isMain = false;
 
         if (function.Name == "main")
         {
             name = "Main";
-
+            isMain = true;
+            
             if (parameters.Count == 0)
             {
                 parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("args")).WithType(SyntaxFactory.ParseTypeName("string[]")));
             }
         }
 
-        var modifiers = SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+        var modifiers = new SyntaxTokenList();
+
+        if (function.VisibilityModifier.HasFlag(VisibilityModifier.Public)
+            || (isMain && function.VisibilityModifier == VisibilityModifier.None))
+        {
+            modifiers = modifiers.Add(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
+        }
+        else if (function.VisibilityModifier.HasFlag(VisibilityModifier.Private))
+        {
+            modifiers = modifiers.Add(SyntaxFactory.Token(SyntaxKind.PrivateKeyword));
+        }
 
         if (!function.HasThisParameter)
         {
