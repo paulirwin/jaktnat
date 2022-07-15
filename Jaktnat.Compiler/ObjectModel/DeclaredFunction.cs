@@ -16,5 +16,10 @@ internal class DeclaredFunction : Function
 
     public override TypeReference ReturnType => FunctionSyntax.ReturnType ?? throw new InvalidOperationException("Function type resolution has not yet happened");
 
+    public override bool Mutates => DeclaringType != null
+                                    && FunctionSyntax.Parameters != null
+                                    && FunctionSyntax.Parameters.Parameters.Count > 0
+                                    && FunctionSyntax.Parameters.Parameters[0] is ThisParameterSyntax { Mutable: true };
+
     public override string ToString() => FunctionSyntax.ToString();
 }

@@ -14,4 +14,8 @@ public abstract class ExpressionSyntax : SyntaxNode
     public TypeReference? ExpressionType { get; set; }
 
     public object? CompileTimeTarget { get; set; }
+
+    public abstract bool Mutates { get; }
+    
+    public abstract bool PreventsMutation { get; }
 }

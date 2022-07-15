@@ -22,5 +22,9 @@ public class CallSyntax : ExpressionSyntax
 
     internal ConstructorReferenceSyntax? MatchedConstructor { get; set; }
 
+    public override bool Mutates => MatchedMethod is { Mutates: true };
+
+    public override bool PreventsMutation => false;
+
     public override string ToString() => $"{Target}({string.Join(", ", Arguments)})";
 }

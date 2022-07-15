@@ -25,4 +25,12 @@ public class UnaryExpressionSyntax : ExpressionSyntax
         UnaryOperator.BitwiseNot => $"~{Expression}",
         _ => throw new ArgumentOutOfRangeException()
     };
+
+    public override bool Mutates => Operator
+        is UnaryOperator.PreIncrement
+        or UnaryOperator.PreDecrement
+        or UnaryOperator.PostIncrement
+        or UnaryOperator.PostDecrement;
+
+    public override bool PreventsMutation => Expression.PreventsMutation;
 }

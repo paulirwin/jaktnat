@@ -10,4 +10,8 @@ public class ArraySyntax : ExpressionSyntax
     public ExpressionListSyntax ItemsList { get; }
 
     public override string ToString() => $"[{string.Join(", ", ItemsList.Items)}]";
+    
+    public override bool Mutates => false;
+    
+    public override bool PreventsMutation => true; // array initializers are immutable
 }

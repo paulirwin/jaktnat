@@ -1,0 +1,11 @@
+/// Expect:
+/// - error: "Cannot call mutating method on an immutable object instance"
+
+class Foo {
+    public function bar(mut this) {}
+}
+
+function main() {
+    let foo = Foo()
+    foo.bar()
+}

@@ -14,5 +14,7 @@ internal class RuntimeMethodInfoFunction : Function
 
     public override TypeReference ReturnType => Method.ReturnType;
 
+    public override bool Mutates => true; // TODO: can we determine if runtime functions are immutable?
+
     public override string ToString() => Method.ToString() ?? "null";
 }

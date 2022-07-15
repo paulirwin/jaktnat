@@ -54,4 +54,19 @@ public class BinaryExpressionSyntax : ExpressionSyntax
         BinaryOperator.NoneCoalescingAssign => "??=",
         _ => throw new ArgumentOutOfRangeException()
     };
+
+    public override bool Mutates => Operator 
+        is BinaryOperator.Assign
+        or BinaryOperator.AddAssign
+        or BinaryOperator.DivideAssign
+        or BinaryOperator.MultiplyAssign
+        or BinaryOperator.SubtractAssign
+        or BinaryOperator.BitwiseAndAssign
+        or BinaryOperator.BitwiseOrAssign
+        or BinaryOperator.BitwiseXorAssign
+        or BinaryOperator.NoneCoalescingAssign
+        or BinaryOperator.BitwiseLeftShiftAssign
+        or BinaryOperator.BitwiseRightShiftAssign;
+
+    public override bool PreventsMutation => Left.PreventsMutation;
 }

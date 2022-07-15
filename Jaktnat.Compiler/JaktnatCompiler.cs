@@ -24,8 +24,11 @@ public static class JaktnatCompiler
 
         // Phase 3: name, type, and overload resolution
         SyntaxVisitor.Visit<NameResolutionEngine>(context, compilationUnit);
+        
+        // Phase 4: immutability/mutability validation
+        SyntaxVisitor.Visit<ImmutabilityValidator>(context, compilationUnit);
 
-        // Phase 4: assembly generation
+        // Phase 5: assembly generation
         var backend = GetCompilerBackend(options.Backend);
 
         return backend.CompileAssembly(context, assemblyName, compilationUnit);

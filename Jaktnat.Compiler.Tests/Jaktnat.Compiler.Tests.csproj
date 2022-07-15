@@ -48,6 +48,10 @@
     <EmbeddedResource Include="samples\classes\static_method_called_on_object_instance.jakt" />
     <None Remove="samples\classes\method.jakt" />
     <EmbeddedResource Include="samples\classes\method.jakt" />
+    <None Remove="samples\classes\call_private_from_public.jakt" />
+    <EmbeddedResource Include="samples\classes\call_private_from_public.jakt" />
+    <None Remove="samples\classes\mutating_method_called_on_immutable_object_instance.jakt" />
+    <EmbeddedResource Include="samples\classes\mutating_method_called_on_immutable_object_instance.jakt" />
   </ItemGroup>
 
   <ItemGroup>

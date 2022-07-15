@@ -15,4 +15,8 @@ public class LiteralExpressionSyntax : ExpressionSyntax
         string s => $"\"{s}\"",
         _ => Value.ToString() ?? "",
     };
+
+    public override bool Mutates => false;
+
+    public override bool PreventsMutation => true; // literals are immutable
 }
