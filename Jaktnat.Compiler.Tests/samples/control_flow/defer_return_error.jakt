@@ -1,0 +1,14 @@
+/// Expect:
+/// - error: "‘return’ is not allowed inside ‘defer’\n"
+
+function foo() {
+    defer {
+        return 2
+    }
+
+    return 1
+}
+
+function main() {
+    println("foo returned {}", foo())
+}

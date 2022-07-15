@@ -196,6 +196,10 @@ internal static class SyntaxVisitor
         {
             VisitInternal(obj, context, throwExpr);
         }
+        else if (node is DeferSyntax deferSyntax)
+        {
+            VisitInternal(obj, context, deferSyntax.Body);
+        }
 
         InvokeVisit(obj, context, node);
     }

@@ -99,7 +99,7 @@ Language features:
 - [ ] `match` expressions
 - [ ] Optional chaining
 - [ ] None coalescing for Optionals
-- [ ] `defer` statements
+- [X] `defer` statements
 - [ ] Closures/Lambdas
 - [ ] Dictionaries
 - [ ] Sets

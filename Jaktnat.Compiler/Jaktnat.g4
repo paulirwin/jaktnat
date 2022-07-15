@@ -39,7 +39,10 @@ statement:
     | loopStatement
     | breakStatement
     | continueStatement
-    | returnStatement;
+    | returnStatement
+    | deferStatement;
+
+deferStatement: DEFER (expression | block);
 
 expressionStatement: expression SEMICOLON?;
 
@@ -207,6 +210,7 @@ ASQUESTION: 'as?';
 IS: 'is';
 IF: 'if';
 ELSE: 'else';
+DEFER: 'defer';
 TRY: 'try';
 CATCH: 'catch';
 THROW: 'throw';

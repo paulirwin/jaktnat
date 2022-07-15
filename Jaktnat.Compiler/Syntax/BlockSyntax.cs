@@ -4,8 +4,10 @@ public class BlockSyntax : AggregateSyntax
 {
     public TypeDeclarationSyntax? DeclaringType { get; set; }
     
-    public IDictionary<string, DeclarationSyntax> Declarations { get; set; } = new Dictionary<string, DeclarationSyntax>();
+    public IDictionary<string, DeclarationSyntax> Declarations { get; } = new Dictionary<string, DeclarationSyntax>();
 
+    public IList<DeferSyntax> Defers { get; } = new List<DeferSyntax>();
+    
     public bool TryResolveDeclaration(string name, out DeclarationSyntax declaration)
     {
         if (Declarations.TryGetValue(name, out declaration!))

@@ -58,8 +58,46 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             TrySyntax trySyntax => VisitTry(context, trySyntax),
             ThisExpressionSyntax => SyntaxFactory.ThisExpression(),
             PropertySyntax property => VisitProperty(context, property),
+            DeferSyntax defer => VisitDefer(context, defer),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode? VisitDefer(CompilationContext context, DeferSyntax defer)
+    {
+        var body = Visit(context, defer.Body);
+
+        if (body == null)
+        {
+            throw new CompilerError("Defer statements must have a block or expression");
+        }
+
+        // HACK.PI: possible hash code collision, should do this differently
+        var identifier = $"defer{defer.GetHashCode()}";
+
+        var deferTypeIdentifier = SyntaxFactory.QualifiedName(
+            SyntaxFactory.QualifiedName(
+                SyntaxFactory.IdentifierName("Jaktnat"),
+                SyntaxFactory.IdentifierName("Runtime")),
+            SyntaxFactory.IdentifierName("Defer"));
+
+        var lambda = SyntaxFactory.ParenthesizedLambdaExpression().WithBody(body);
+        
+        // i.e.: using var defer0 = new Jaktnat.Runtime.Defer(() => ...);
+        return SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
+                    .WithVariables(SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
+                        SyntaxFactory.VariableDeclarator(
+                            SyntaxFactory.Identifier(identifier)
+                        ).WithInitializer(SyntaxFactory.EqualsValueClause(
+                            SyntaxFactory.ObjectCreationExpression(deferTypeIdentifier)
+                                .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
+                                    SyntaxFactory.Argument(lambda))))
+                        ))
+                    )
+                )
+            )
+            .WithUsingKeyword(SyntaxFactory.Token(SyntaxKind.UsingKeyword));
     }
 
     private CSharpSyntaxNode? VisitProperty(CompilationContext context, PropertySyntax property)

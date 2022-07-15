@@ -145,6 +145,9 @@ internal static class ScopeResolutionEngine
             case MemberFunctionDeclarationSyntax memberFunction:
                 ResolveScopes(memberFunction.Function, parentBlock);
                 break;
+            case DeferSyntax deferSyntax: 
+                ResolveScopes(deferSyntax.Body, parentBlock);
+                break;
             case IdentifierExpressionSyntax:
             case CatchIdentifierSyntax:
             case LiteralExpressionSyntax:

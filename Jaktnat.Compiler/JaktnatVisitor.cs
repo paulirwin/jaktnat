@@ -910,4 +910,25 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         return new ThrowSyntax(throwable);
     }
+
+    public override SyntaxNode? VisitDeferStatement(JaktnatParser.DeferStatementContext context)
+    {
+        SyntaxNode? body = null;
+
+        if (context.expression() is { } expression)
+        {
+            body = Visit(expression);
+        }
+        else if (context.block() is { } block)
+        {
+            body = Visit(block);
+        }
+
+        if (body == null)
+        {
+            throw new ParserError("Unable to parse defer statement", context.start);
+        }
+
+        return new DeferSyntax(body);
+    }
 }

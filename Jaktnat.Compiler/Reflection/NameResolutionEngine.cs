@@ -27,7 +27,8 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<ScopeAccessSyntax>,
     ISyntaxVisitor<CatchIdentifierSyntax>,
     ISyntaxVisitor<MemberFunctionDeclarationSyntax>,
-    ISyntaxVisitor<ThisExpressionSyntax>
+    ISyntaxVisitor<ThisExpressionSyntax>,
+    ISyntaxVisitor<DeferSyntax>
 {
     private static readonly IReadOnlyList<Type> _signedWideningTypes = new[]
     {
@@ -841,5 +842,15 @@ internal class NameResolutionEngine :
         }
 
         node.ExpressionType = declaringType;
+    }
+
+    public void Visit(CompilationContext context, DeferSyntax node)
+    {
+        if (node.ParentBlock == null)
+        {
+            throw new CompilerError("Defer statement must be within a block");
+        }
+        
+        node.ParentBlock.Defers.Add(node);
     }
 }

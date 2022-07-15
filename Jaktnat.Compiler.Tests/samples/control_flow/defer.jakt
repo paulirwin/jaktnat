@@ -1,0 +1,9 @@
+/// Expect:
+/// - output: "Hello\n friends!\n\n"
+
+function main() {
+    defer {
+        println(" friends!\n")
+    }
+    println("Hello")
+}
