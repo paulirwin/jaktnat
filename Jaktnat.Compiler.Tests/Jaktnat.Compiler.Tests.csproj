@@ -52,6 +52,8 @@
     <EmbeddedResource Include="samples\classes\call_private_from_public.jakt" />
     <None Remove="samples\classes\mutating_method_called_on_immutable_object_instance.jakt" />
     <EmbeddedResource Include="samples\classes\mutating_method_called_on_immutable_object_instance.jakt" />
+    <None Remove="samples\classes\throwing_method.jakt" />
+    <EmbeddedResource Include="samples\classes\throwing_method.jakt" />
   </ItemGroup>
 
   <ItemGroup>
