@@ -52,11 +52,19 @@ internal class RoslynBackend : ICompilerBackend
 
         File.Copy(context.RuntimeAssembly.Location, Path.Join(outputDir, Path.GetFileName(context.RuntimeAssembly.Location)), true);
 
-        var assy = Assembly.LoadFile(outputFile);
-        return assy;
+        return Assembly.LoadFile(outputFile);
     }
 
-    public IEnumerable<MetadataReference> GetMetadataReference(CompilationContext context)
+    public bool CanTranspile => true;
+    
+    public string Transpile(CompilationContext context, CompilationUnitSyntax compilationUnit)
+    {
+        var syntaxTrees = TransformSyntax(context, compilationUnit).ToList();
+
+        return syntaxTrees.Count == 0 ? string.Empty : syntaxTrees[0].ToString();
+    }
+
+    private IEnumerable<MetadataReference> GetMetadataReference(CompilationContext context)
     {
         var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
         

@@ -26,7 +26,7 @@ public class SampleTests
         var assemblyName = Path.GetFileNameWithoutExtension(filePath);
         Assembly assembly;
 
-        var options = new JaktnatCompilerOptions
+        var options = new BuildOptions
         {
             Backend = BackendType.Roslyn,
         };

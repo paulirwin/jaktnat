@@ -10,13 +10,34 @@ namespace Jaktnat.Compiler;
 
 public static class JaktnatCompiler
 {
-    public static Assembly CompileText(JaktnatCompilerOptions options, string assemblyName, string contents)
+    public static Assembly CompileText(BuildOptions options, string assemblyName, string contents)
+    {
+        var compilationUnit = PrepareCompilation(options, assemblyName, contents, out var context, out var backend);
+
+        return backend.CompileAssembly(context, assemblyName, compilationUnit);
+    }
+
+    public static string TranspileText(BuildOptions options, string assemblyName, string contents)
+    {
+        var compilationUnit = PrepareCompilation(options, assemblyName, contents, out var context, out var backend);
+
+        if (!backend.CanTranspile)
+        {
+            throw new InvalidOperationException($"The {backend.GetType()} backend does not support transpiling");
+        }
+
+        return backend.Transpile(context, compilationUnit);
+    }
+
+    private static CompilationUnitSyntax PrepareCompilation(BuildOptions options, 
+        string assemblyName, string contents,
+        out CompilationContext context, out ICompilerBackend backend)
     {
         var runtimeAssembly = typeof(FreeFunctionAttribute).Assembly;
-        
+
         // Phase 1: lexing and parsing
         var compilationUnit = ParseProgram(contents);
-        var context = new CompilationContext(compilationUnit, runtimeAssembly, assemblyName);
+        context = new CompilationContext(compilationUnit, runtimeAssembly, assemblyName);
         FreeFunctionResolver.PopulateGlobals(context);
 
         // Phase 2: scope resolution
@@ -24,21 +45,21 @@ public static class JaktnatCompiler
 
         // Phase 3: name, type, and overload resolution
         SyntaxVisitor.Visit<NameResolutionEngine>(context, compilationUnit);
-        
+
         // Phase 4: immutability/mutability validation
         SyntaxVisitor.Visit<ImmutabilityValidator>(context, compilationUnit);
 
         // Phase 5: assembly generation
-        var backend = GetCompilerBackend(options.Backend);
-
-        return backend.CompileAssembly(context, assemblyName, compilationUnit);
+        backend = GetCompilerBackend(options.Backend);
+        
+        return compilationUnit;
     }
 
     private static ICompilerBackend GetCompilerBackend(BackendType backend)
     {
         return backend switch
         {
-            BackendType.ILGenerator => new ILGeneratorBackend(),
+            BackendType.MonoCecil => new MonoCecilBackend(),
             BackendType.Roslyn => new RoslynBackend(),
             _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, $"Backend type {backend} not supported"),
         };
@@ -51,7 +72,6 @@ public static class JaktnatCompiler
         var visitor = new JaktnatVisitor();
 
         parser.ErrorHandler = new BailErrorStrategy();
-
 
         try
         {
