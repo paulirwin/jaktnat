@@ -150,7 +150,7 @@ Other notes from Jakt README:
 
 Future non-Jakt possibilities to explore:
 - [ ] LINQ support
-- [ ] Inline C# (instead of inline C++)
+- [X] Inline C# (instead of inline C++)
 
 ## Motivation
 

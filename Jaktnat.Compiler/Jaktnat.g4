@@ -40,7 +40,13 @@ statement:
     | breakStatement
     | continueStatement
     | returnStatement
-    | deferStatement;
+    | deferStatement
+    | unsafeBlock
+    | csharpBlock;
+    
+unsafeBlock: UNSAFE block;
+
+csharpBlock: CSHARP block;
 
 deferStatement: DEFER (expression | block);
 
@@ -235,6 +241,8 @@ AND: 'and';
 OR: 'or';
 NOT: 'not';
 THROWS: 'throws';
+UNSAFE: 'unsafe';
+CSHARP: 'csharp';
 
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;

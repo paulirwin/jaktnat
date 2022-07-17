@@ -1,0 +1,21 @@
+/// Expect:
+/// - output: "42\n"
+
+function main() {
+    mut i: i32 = 0
+    unsafe {
+        csharp {
+            "i = 32;"
+        }
+    }
+
+    let x = 3
+    unsafe {
+        csharp {
+            "var y = 7;"
+            "i += (x + y);"
+        }
+    }
+
+    println("{}", i)
+}

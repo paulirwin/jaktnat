@@ -200,6 +200,14 @@ internal static class SyntaxVisitor
         {
             VisitInternal(obj, context, deferSyntax.Body);
         }
+        else if (node is UnsafeBlockSyntax unsafeBlock)
+        {
+            VisitInternal(obj, context, unsafeBlock.Block);
+        }
+        else if (node is CSharpBlockSyntax csharpBlock)
+        {
+            VisitInternal(obj, context, csharpBlock.Block);
+        }
 
         InvokeVisit(obj, context, node);
     }

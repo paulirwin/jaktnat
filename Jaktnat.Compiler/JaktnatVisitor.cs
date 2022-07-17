@@ -931,4 +931,24 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         return new DeferSyntax(body);
     }
+
+    public override SyntaxNode? VisitUnsafeBlock(JaktnatParser.UnsafeBlockContext context)
+    {
+        if (Visit(context.block()) is not BlockSyntax block)
+        {
+            throw new ParserError("Unable to parse unsafe block", context.start);
+        }
+
+        return new UnsafeBlockSyntax(block);
+    }
+
+    public override SyntaxNode? VisitCsharpBlock(JaktnatParser.CsharpBlockContext context)
+    {
+        if (Visit(context.block()) is not BlockSyntax block)
+        {
+            throw new ParserError("Unable to parse csharp block", context.start);
+        }
+
+        return new CSharpBlockSyntax(block);
+    }
 }

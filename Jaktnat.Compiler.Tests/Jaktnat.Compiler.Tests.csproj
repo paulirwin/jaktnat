@@ -62,6 +62,8 @@
     <EmbeddedResource Include="samples\control_flow\defer.jakt" />
     <None Remove="samples\control_flow\defer_in_defer.jakt" />
     <EmbeddedResource Include="samples\control_flow\defer_in_defer.jakt" />
+    <None Remove="samples\inline_cs\inline_cpp.jakt" />
+    <EmbeddedResource Include="samples\inline_cs\inline_cs.jakt" />
   </ItemGroup>
 
   <ItemGroup>

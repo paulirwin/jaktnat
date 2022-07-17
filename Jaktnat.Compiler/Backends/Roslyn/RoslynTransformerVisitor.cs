@@ -1,4 +1,5 @@
-﻿using Jaktnat.Compiler.ObjectModel;
+﻿using System.Text;
+using Jaktnat.Compiler.ObjectModel;
 using Jaktnat.Compiler.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -20,6 +21,7 @@ using CSExpressionSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax
 using CSMemberDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MemberDeclarationSyntax;
 using CSClassDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax;
 using CSMethodDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax;
+using CSCompilationUnitSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.CompilationUnitSyntax;
 using ThisExpressionSyntax = Jaktnat.Compiler.Syntax.ThisExpressionSyntax;
 
 namespace Jaktnat.Compiler.Backends.Roslyn;
@@ -59,8 +61,53 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             ThisExpressionSyntax => SyntaxFactory.ThisExpression(),
             PropertySyntax property => VisitProperty(context, property),
             DeferSyntax defer => VisitDefer(context, defer),
+            UnsafeBlockSyntax unsafeBlock => VisitUnsafeBlock(context, unsafeBlock),
+            CSharpBlockSyntax csharpBlock => VisitCSharpBlock(context, csharpBlock),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode? VisitCSharpBlock(CompilationContext context, CSharpBlockSyntax csharpBlock)
+    {
+        var sb = new StringBuilder();
+
+        foreach (var child in csharpBlock.Block.Children)
+        {
+            if (child is not LiteralExpressionSyntax { Value: string csLine })
+            {
+                throw new CompilerError("Only string literals are allowed inside inline C# blocks");
+            }
+
+            sb.Append(csLine);
+        }
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(sb.ToString());
+
+        if (syntaxTree.GetRoot() is not CSCompilationUnitSyntax rootNode)
+        {
+            throw new CompilerError("Unable to parse inline C# block");
+        }
+
+        var statements = new List<StatementSyntax>();
+
+        foreach (var rootMember in rootNode.Members)
+        {
+            if (rootMember is GlobalStatementSyntax global)
+            {
+                statements.Add(global.Statement);
+            }
+            else
+            {
+                throw new CompilerError($"Expected a statement in inline C# block, got a {rootMember.GetType()}");
+            }
+        }
+        
+        return SyntaxFactory.Block(statements);
+    }
+
+    private CSharpSyntaxNode? VisitUnsafeBlock(CompilationContext context, UnsafeBlockSyntax unsafeBlock)
+    {
+        return Visit(context, unsafeBlock.Block);
     }
 
     private CSharpSyntaxNode? VisitDefer(CompilationContext context, DeferSyntax defer)

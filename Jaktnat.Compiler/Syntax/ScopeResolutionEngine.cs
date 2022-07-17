@@ -148,6 +148,12 @@ internal static class ScopeResolutionEngine
             case DeferSyntax deferSyntax: 
                 ResolveScopes(deferSyntax.Body, parentBlock);
                 break;
+            case CSharpBlockSyntax csharpBlock:
+                ResolveScopes(csharpBlock.Block, parentBlock);
+                break;
+            case UnsafeBlockSyntax unsafeBlock:
+                ResolveScopes(unsafeBlock.Block, parentBlock);
+                break;
             case IdentifierExpressionSyntax:
             case CatchIdentifierSyntax:
             case LiteralExpressionSyntax:

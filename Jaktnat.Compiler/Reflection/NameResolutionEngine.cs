@@ -28,9 +28,11 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<CatchIdentifierSyntax>,
     ISyntaxVisitor<MemberFunctionDeclarationSyntax>,
     ISyntaxVisitor<ThisExpressionSyntax>,
-    ISyntaxVisitor<DeferSyntax>
+    ISyntaxVisitor<DeferSyntax>,
+    ISyntaxVisitor<UnsafeBlockSyntax>,
+    ISyntaxVisitor<CSharpBlockSyntax>
 {
-    private static readonly IReadOnlyList<Type> _signedWideningTypes = new[]
+    private static readonly IReadOnlyList<Type> SignedWideningTypes = new[]
     {
         typeof(sbyte),
         typeof(short),
@@ -38,7 +40,7 @@ internal class NameResolutionEngine :
         typeof(long),
     };
 
-    private static readonly IReadOnlyList<Type> _unsignedWideningTypes = new[]
+    private static readonly IReadOnlyList<Type> UnsignedWideningTypes = new[]
     {
         typeof(byte),
         typeof(ushort),
@@ -429,8 +431,8 @@ internal class NameResolutionEngine :
             return false;
         }
 
-        int paramIndex = _signedWideningTypes.IndexOf(parameterType);
-        int argIndex = _signedWideningTypes.IndexOf(argumentType);
+        int paramIndex = SignedWideningTypes.IndexOf(parameterType);
+        int argIndex = SignedWideningTypes.IndexOf(argumentType);
 
         if (paramIndex >= 0 && argIndex >= 0)
         {
@@ -438,8 +440,8 @@ internal class NameResolutionEngine :
             return paramIndex <= argIndex;
         }
 
-        paramIndex = _unsignedWideningTypes.IndexOf(parameterType);
-        argIndex = _unsignedWideningTypes.IndexOf(argumentType);
+        paramIndex = UnsignedWideningTypes.IndexOf(parameterType);
+        argIndex = UnsignedWideningTypes.IndexOf(argumentType);
 
         // HACK: we're letting the C# compiler decide if this is valid
         return paramIndex >= 0 && argIndex >= 0 && paramIndex <= argIndex;
@@ -452,16 +454,16 @@ internal class NameResolutionEngine :
             return false;
         }
 
-        int paramIndex = _signedWideningTypes.IndexOf(parameterType);
-        int argIndex = _signedWideningTypes.IndexOf(argumentType);
+        int paramIndex = SignedWideningTypes.IndexOf(parameterType);
+        int argIndex = SignedWideningTypes.IndexOf(argumentType);
 
         if (paramIndex >= 0 && argIndex >= 0)
         {
             return paramIndex >= argIndex;
         }
 
-        paramIndex = _unsignedWideningTypes.IndexOf(parameterType);
-        argIndex = _unsignedWideningTypes.IndexOf(argumentType);
+        paramIndex = UnsignedWideningTypes.IndexOf(parameterType);
+        argIndex = UnsignedWideningTypes.IndexOf(argumentType);
 
         return paramIndex >= 0 && argIndex >= 0 && paramIndex >= argIndex;
     }
@@ -852,5 +854,28 @@ internal class NameResolutionEngine :
         }
         
         node.ParentBlock.Defers.Add(node);
+    }
+
+    public void Visit(CompilationContext context, UnsafeBlockSyntax node)
+    {
+    }
+
+    public void PreVisit(CompilationContext context, UnsafeBlockSyntax node)
+    {
+        foreach (var child in node.Block.Children)
+        {
+            if (child is CSharpBlockSyntax csharpBlock)
+            {
+                csharpBlock.ParentUnsafeBlock = node;
+            }
+        }
+    }
+
+    public void Visit(CompilationContext context, CSharpBlockSyntax node)
+    {
+        if (node.ParentUnsafeBlock == null)
+        {
+            throw new CompilerError("C# blocks must be within an unsafe block");
+        }
     }
 }
