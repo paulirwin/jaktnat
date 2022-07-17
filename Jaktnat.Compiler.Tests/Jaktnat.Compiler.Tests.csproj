@@ -76,6 +76,8 @@
     <EmbeddedResource Include="samples\arrays\array_bad2.jakt" />
     <None Remove="samples\arrays\array_iterator.jakt" />
     <EmbeddedResource Include="samples\arrays\array_iterator.jakt" />
+    <None Remove="samples\arrays\array_param.jakt" />
+    <EmbeddedResource Include="samples\arrays\array_param.jakt" />
   </ItemGroup>
 
   <ItemGroup>

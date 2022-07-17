@@ -24,8 +24,28 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
     public override SyntaxNode? VisitFunction(JaktnatParser.FunctionContext context)
     {
         var name = context.NAME().GetText();
-        
-        if (VisitBlock(context.block()) is not BlockSyntax body)
+
+        SyntaxNode body;
+
+        if (context.block() != null)
+        {
+            if (Visit(context.block()) is not BlockSyntax bodyBlock)
+            {
+                throw new ParserError("Incomplete function", context.Start);
+            }
+
+            body = bodyBlock;
+        }
+        else if (context.expression() != null)
+        {
+            if (Visit(context.expression()) is not ExpressionSyntax bodyExpression)
+            {
+                throw new ParserError("Incomplete function", context.Start);
+            }
+
+            body = bodyExpression;
+        }
+        else
         {
             throw new ParserError("Incomplete function", context.Start);
         }

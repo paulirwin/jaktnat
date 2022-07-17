@@ -14,7 +14,6 @@ using LiteralExpressionSyntax = Jaktnat.Compiler.Syntax.LiteralExpressionSyntax;
 using VariableDeclarationSyntax = Jaktnat.Compiler.Syntax.VariableDeclarationSyntax;
 using ParameterSyntax = Jaktnat.Compiler.Syntax.ParameterSyntax;
 using ParenthesizedExpressionSyntax = Jaktnat.Compiler.Syntax.ParenthesizedExpressionSyntax;
-
 using CSBlockSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax;
 using CSParameterSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax;
 using CSExpressionSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax;
@@ -22,6 +21,7 @@ using CSMemberDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MemberDec
 using CSClassDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax;
 using CSMethodDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax;
 using CSCompilationUnitSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.CompilationUnitSyntax;
+using ExpressionSyntax = Jaktnat.Compiler.Syntax.ExpressionSyntax;
 using ThisExpressionSyntax = Jaktnat.Compiler.Syntax.ThisExpressionSyntax;
 
 namespace Jaktnat.Compiler.Backends.Roslyn;
@@ -64,7 +64,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             UnsafeBlockSyntax unsafeBlock => VisitUnsafeBlock(context, unsafeBlock),
             CSharpBlockSyntax csharpBlock => VisitCSharpBlock(context, csharpBlock),
             ForInSyntax forInSyntax => VisitForInSyntax(context, forInSyntax),
-            _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
+            _ => throw new NotImplementedException(
+                $"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
     }
 
@@ -122,7 +123,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                 throw new CompilerError($"Expected a statement in inline C# block, got a {rootMember.GetType()}");
             }
         }
-        
+
         return SyntaxFactory.Block(statements);
     }
 
@@ -150,20 +151,21 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             SyntaxFactory.IdentifierName("Defer"));
 
         var lambda = SyntaxFactory.ParenthesizedLambdaExpression().WithBody(body);
-        
+
         // i.e.: using var defer0 = new Jaktnat.Runtime.Defer(() => ...);
         return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(SyntaxFactory.IdentifierName("var"))
                     .WithVariables(SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
-                        SyntaxFactory.VariableDeclarator(
-                            SyntaxFactory.Identifier(identifier)
-                        ).WithInitializer(SyntaxFactory.EqualsValueClause(
-                            SyntaxFactory.ObjectCreationExpression(deferTypeIdentifier)
-                                .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
-                                    SyntaxFactory.Argument(lambda))))
-                        ))
+                            SyntaxFactory.VariableDeclarator(
+                                SyntaxFactory.Identifier(identifier)
+                            ).WithInitializer(SyntaxFactory.EqualsValueClause(
+                                SyntaxFactory.ObjectCreationExpression(deferTypeIdentifier)
+                                    .WithArgumentList(SyntaxFactory.ArgumentList(
+                                        SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
+                                            SyntaxFactory.Argument(lambda))))
+                            ))
+                        )
                     )
-                )
             )
             .WithUsingKeyword(SyntaxFactory.Token(SyntaxKind.UsingKeyword));
     }
@@ -179,14 +181,17 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                 SyntaxFactory.ParseTypeName(property.Type.FullName),
                 SyntaxFactory.Identifier(property.Name))
             .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-            .WithAccessorList(SyntaxFactory.AccessorList(SyntaxFactory.List(new []
+            .WithAccessorList(SyntaxFactory.AccessorList(SyntaxFactory.List(new[]
             {
-                SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-                SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
             })));
     }
 
-    private CSharpSyntaxNode VisitMemberFunction(CompilationContext context, MemberFunctionDeclarationSyntax memberFunction)
+    private CSharpSyntaxNode VisitMemberFunction(CompilationContext context,
+        MemberFunctionDeclarationSyntax memberFunction)
     {
         if (Visit(context, memberFunction.Function) is not CSMethodDeclarationSyntax method)
         {
@@ -234,7 +239,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
 
         catches.Add(SyntaxFactory.CatchClause(
-            SyntaxFactory.CatchDeclaration(SyntaxFactory.ParseTypeName("Exception"), SyntaxFactory.ParseToken(trySyntax.Catch.Identifier.Name)),
+            SyntaxFactory.CatchDeclaration(SyntaxFactory.ParseTypeName("Exception"),
+                SyntaxFactory.ParseToken(trySyntax.Catch.Identifier.Name)),
             null,
             catchBlock));
 
@@ -273,7 +279,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             throw new NotImplementedException("Records must have one constructor");
         }
 
-        var parameters = classDecl.Constructors[0].Parameters.Parameters.Select(i => VisitParameter(context, i)).Cast<CSParameterSyntax>().ToList();
+        var parameters = classDecl.Constructors[0].Parameters.Parameters.Select(i => VisitParameter(context, i))
+            .Cast<CSParameterSyntax>().ToList();
 
         var ctor = SyntaxFactory.ConstructorDeclaration(classDecl.Name)
             .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
@@ -285,16 +292,16 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                         SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                             SyntaxFactory.ThisExpression(), SyntaxFactory.IdentifierName(i.Name)),
                         SyntaxFactory.IdentifierName(i.Name))))));
-        
+
         var members = classDecl.Members
             .Select(i => Visit(context, i))
             .Cast<CSMemberDeclarationSyntax>()
             .ToList();
-        
+
         members.Insert(0, ctor);
 
         var clazz = SyntaxFactory.ClassDeclaration(classDecl.Name);
-        
+
         return members.Count == 0
             ? clazz.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
                 .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
@@ -308,7 +315,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         var values = array.ItemsList.Items.Select(i => Visit(context, i)).Cast<CSExpressionSyntax>().ToList();
 
         return SyntaxFactory.ImplicitArrayCreationExpression(
-            SyntaxFactory.InitializerExpression(SyntaxKind.ArrayInitializerExpression, SyntaxFactory.SeparatedList(values))
+            SyntaxFactory.InitializerExpression(SyntaxKind.ArrayInitializerExpression,
+                SyntaxFactory.SeparatedList(values))
         );
     }
 
@@ -326,7 +334,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                 throw new CompilerError("Type check syntax missing resolved type");
             }
 
-            return SyntaxFactory.BinaryExpression(SyntaxKind.IsExpression, expression, SyntaxFactory.ParseTypeName(typeCheck.Type.Type.FullName));
+            return SyntaxFactory.BinaryExpression(SyntaxKind.IsExpression, expression,
+                SyntaxFactory.ParseTypeName(typeCheck.Type.Type.FullName));
         }
 
         var (kind, prefix) = unary.Operator switch
@@ -370,7 +379,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             throw new CompilerError("Indexer access argument expression did not evaluate to an expression");
         }
 
-        return SyntaxFactory.ElementAccessExpression(expression, SyntaxFactory.BracketedArgumentList(SyntaxFactory.SeparatedList(new[] { SyntaxFactory.Argument(arg) })));
+        return SyntaxFactory.ElementAccessExpression(expression,
+            SyntaxFactory.BracketedArgumentList(SyntaxFactory.SeparatedList(new[] { SyntaxFactory.Argument(arg) })));
     }
 
     private CSharpSyntaxNode VisitMemberAccess(CompilationContext context, MemberAccessSyntax memberAccess)
@@ -380,7 +390,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             throw new CompilerError("Member access expression did not evaluate to an expression");
         }
 
-        return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression, SyntaxFactory.IdentifierName(memberAccess.Member.Name));
+        return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression,
+            SyntaxFactory.IdentifierName(memberAccess.Member.Name));
     }
 
     private CSharpSyntaxNode VisitTypeCast(CompilationContext context, TypeCastSyntax typeCast)
@@ -430,8 +441,10 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             BinaryOperator.BitwiseXor => SyntaxKind.ExclusiveOrExpression,
             BinaryOperator.BitwiseLeftShift => SyntaxKind.LeftShiftExpression,
             BinaryOperator.BitwiseRightShift => SyntaxKind.RightShiftExpression,
-            BinaryOperator.ArithmeticLeftShift => throw new NotImplementedException("Arithmetic left shift not supported"),
-            BinaryOperator.ArithmeticRightShift => throw new NotImplementedException("Arithmetic right shift not supported"),
+            BinaryOperator.ArithmeticLeftShift => throw new NotImplementedException(
+                "Arithmetic left shift not supported"),
+            BinaryOperator.ArithmeticRightShift => throw new NotImplementedException(
+                "Arithmetic right shift not supported"),
             BinaryOperator.Assign => SyntaxKind.SimpleAssignmentExpression,
             BinaryOperator.AddAssign => SyntaxKind.AddAssignmentExpression,
             BinaryOperator.SubtractAssign => SyntaxKind.SubtractAssignmentExpression,
@@ -448,12 +461,12 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        return kind is SyntaxKind.SimpleAssignmentExpression 
-            or SyntaxKind.AddAssignmentExpression 
-            or SyntaxKind.SubtractAssignmentExpression 
-            or SyntaxKind.MultiplyAssignmentExpression 
-            or SyntaxKind.DivideAssignmentExpression 
-            or SyntaxKind.ModuloAssignmentExpression 
+        return kind is SyntaxKind.SimpleAssignmentExpression
+            or SyntaxKind.AddAssignmentExpression
+            or SyntaxKind.SubtractAssignmentExpression
+            or SyntaxKind.MultiplyAssignmentExpression
+            or SyntaxKind.DivideAssignmentExpression
+            or SyntaxKind.ModuloAssignmentExpression
             or SyntaxKind.AndAssignmentExpression
             or SyntaxKind.OrAssignmentExpression
             or SyntaxKind.ExclusiveOrAssignmentExpression
@@ -522,23 +535,30 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         return SyntaxFactory.IdentifierName(identifier.Name);
     }
 
-    private CSharpSyntaxNode VisitVariableDeclaration(CompilationContext context, VariableDeclarationSyntax variableDeclaration)
+    private CSharpSyntaxNode VisitVariableDeclaration(CompilationContext context,
+        VariableDeclarationSyntax variableDeclaration)
     {
         var type = variableDeclaration.TypeIdentifier?.Type
-            ?? variableDeclaration.InitializerExpression?.ExpressionType;
+                   ?? variableDeclaration.InitializerExpression?.ExpressionType;
 
         if (type.FullName == null)
         {
             throw new CompilerError("Type not determined for variable declaration");
         }
 
-        var initializer = variableDeclaration.InitializerExpression != null ? Visit(context, variableDeclaration.InitializerExpression) as CSExpressionSyntax : null;
-        
+        var initializer = variableDeclaration.InitializerExpression != null
+            ? Visit(context, variableDeclaration.InitializerExpression) as CSExpressionSyntax
+            : null;
+
         return SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
-                variableDeclaration.TypeIdentifier != null ? SyntaxFactory.ParseTypeName(type.FullName) : SyntaxFactory.ParseTypeName("var"),
-                SyntaxFactory.SeparatedList(new[] {
-                    SyntaxFactory.VariableDeclarator(variableDeclaration.Name).WithInitializer(initializer != null ? SyntaxFactory.EqualsValueClause(initializer) : null)
+                variableDeclaration.TypeIdentifier != null
+                    ? SyntaxFactory.ParseTypeName(type.FullName)
+                    : SyntaxFactory.ParseTypeName("var"),
+                SyntaxFactory.SeparatedList(new[]
+                {
+                    SyntaxFactory.VariableDeclarator(variableDeclaration.Name)
+                        .WithInitializer(initializer != null ? SyntaxFactory.EqualsValueClause(initializer) : null)
                 })));
     }
 
@@ -546,12 +566,14 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
     {
         var kind = literal.Value switch
         {
-            byte or sbyte or short or ushort or int or uint or long or ulong or nint or nuint or float or double or decimal => SyntaxKind.NumericLiteralExpression,
+            byte or sbyte or short or ushort or int or uint or long or ulong or nint or nuint or float or double
+                or decimal => SyntaxKind.NumericLiteralExpression,
             char => SyntaxKind.CharacterLiteralExpression,
             string => SyntaxKind.StringLiteralExpression,
             true => SyntaxKind.TrueLiteralExpression,
             false => SyntaxKind.FalseLiteralExpression,
-            _ => throw new NotImplementedException($"Literal expressions of type {literal.Value.GetType()} not yet implemented"),
+            _ => throw new NotImplementedException(
+                $"Literal expressions of type {literal.Value.GetType()} not yet implemented"),
         };
 
         var text = literal.Value switch
@@ -597,12 +619,12 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
             args.Add(argExpr);
         }
-        
+
         if (call.MatchedMethod != null)
         {
             CSExpressionSyntax target;
-            
-            if (call.CompileTimeTarget is SyntaxNode targetNode) 
+
+            if (call.CompileTimeTarget is SyntaxNode targetNode)
             {
                 if (Visit(context, targetNode) is not CSExpressionSyntax targetExpr)
                 {
@@ -611,10 +633,10 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
                 target = call.MatchedMethod switch
                 {
-                    DeclaredFunction { DeclaringType: { } declaringType } declared => 
+                    DeclaredFunction { DeclaringType: { } declaringType } declared =>
                         SyntaxFactory.MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression, 
-                            targetExpr, 
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            targetExpr,
                             SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name)),
                     RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } =>
                         SyntaxFactory.MemberAccessExpression(
@@ -624,30 +646,32 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                         ),
                     _ => throw new NotImplementedException("Unexpected function type")
                 };
-            } 
-            else 
+            }
+            else
             {
                 target = call.MatchedMethod switch
                 {
-                    DeclaredFunction { DeclaringType: null } declared => 
+                    DeclaredFunction { DeclaringType: null } declared =>
                         SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
-                    DeclaredFunction { DeclaringType: { } declaringType } declared => 
+                    DeclaredFunction { DeclaringType: { } declaringType } declared =>
                         SyntaxFactory.MemberAccessExpression(
-                            SyntaxKind.SimpleMemberAccessExpression, 
-                            SyntaxFactory.IdentifierName(declaringType.Name), 
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName(declaringType.Name),
                             SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name)),
-                    RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } => 
+                    RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } =>
                         SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
                     _ => throw new NotImplementedException("Unexpected function type")
                 };
             }
 
-            return SyntaxFactory.InvocationExpression(target, SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
+            return SyntaxFactory.InvocationExpression(target,
+                SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
         }
 
         if (call.MatchedConstructor != null)
         {
-            return SyntaxFactory.ObjectCreationExpression(SyntaxFactory.IdentifierName(call.MatchedConstructor.DeclaringType.Name))
+            return SyntaxFactory
+                .ObjectCreationExpression(SyntaxFactory.IdentifierName(call.MatchedConstructor.DeclaringType.Name))
                 .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
         }
 
@@ -673,7 +697,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                 CSExpressionSyntax e => SyntaxFactory.ExpressionStatement(e),
                 _ => throw new CompilerError("Unexpected non-statement in block"),
             };
-            
+
             statements.Add(statement);
         }
 
@@ -715,11 +739,6 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             }
         }
 
-        if (Visit(context, function.Body) is not CSBlockSyntax body)
-        {
-            throw new CompilerError("Only block syntax currently supported for function body");
-        }
-        
         string name = function.Name;
         bool isMain = false;
 
@@ -727,10 +746,11 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         {
             name = "Main";
             isMain = true;
-            
+
             if (parameters.Count == 0)
             {
-                parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("args")).WithType(SyntaxFactory.ParseTypeName("string[]")));
+                parameters.Add(SyntaxFactory.Parameter(SyntaxFactory.Identifier("args"))
+                    .WithType(SyntaxFactory.ParseTypeName("string[]")));
             }
         }
 
@@ -751,10 +771,36 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             modifiers = modifiers.Add(SyntaxFactory.Token(SyntaxKind.StaticKeyword));
         }
 
-        return SyntaxFactory.MethodDeclaration(returnType, name)
+        var baseDeclaration = SyntaxFactory.MethodDeclaration(returnType, name)
             .WithModifiers(modifiers)
-            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)))
-            .WithBody(body);
+            .WithParameterList(SyntaxFactory.ParameterList(SyntaxFactory.SeparatedList(parameters)));
+        
+        if (function.Body is ExpressionBlockSyntax expressionBodySyntax)
+        {
+            if (expressionBodySyntax.Children.Count != 1 
+                || expressionBodySyntax.Children[0] is not ExpressionSyntax expr
+                || Visit(context, expr) is not CSExpressionSyntax expressionBody)
+            {
+                throw new CompilerError("Function body did not evaluate to an expression");
+            }
+
+            if (function.ReturnTypeIdentifier == null
+                && expr.ExpressionType != null)
+            {
+                baseDeclaration = baseDeclaration.WithReturnType(SyntaxFactory.ParseTypeName(expr.ExpressionType.FullName));
+            }
+
+            return baseDeclaration
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(expressionBody))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        }
+
+        if (Visit(context, function.Body) is not CSBlockSyntax body)
+        {
+            throw new CompilerError("Function body did not evaluate to a block");
+        }
+
+        return baseDeclaration.WithBody(body);
     }
 
     private CSharpSyntaxNode VisitCompilationUnit(CompilationContext context, CompilationUnitSyntax compilationUnit)
@@ -765,7 +811,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         if (context.RoslynProgramClass == null)
         {
             context.RoslynProgramClass = SyntaxFactory.ClassDeclaration("Program")
-                .WithModifiers(SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword)).Add(SyntaxFactory.Token(SyntaxKind.StaticKeyword)));
+                .WithModifiers(SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .Add(SyntaxFactory.Token(SyntaxKind.StaticKeyword)));
 
             addProgramClass = true;
         }
@@ -789,7 +836,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             }
             else if (result != null)
             {
-                throw new NotImplementedException($"Unexpected transformed child of compilation unit: {result.GetType()}");
+                throw new NotImplementedException(
+                    $"Unexpected transformed child of compilation unit: {result.GetType()}");
             }
         }
 

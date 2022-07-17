@@ -2,21 +2,34 @@
 
 namespace Jaktnat.Compiler.Syntax;
 
-public class FunctionSyntax : BodySyntax
+public class FunctionSyntax : SyntaxNode
 {
     public FunctionSyntax(VisibilityModifier visibilityModifier,
         string name, 
         ParameterListSyntax? parameters, 
-        BlockSyntax body, 
+        SyntaxNode body, 
         bool throws, 
         TypeIdentifierSyntax? returnTypeIdentifier)
-        : base(body)
     {
         VisibilityModifier = visibilityModifier;
         Name = name;
         Parameters = parameters;
         Throws = throws;
         ReturnTypeIdentifier = returnTypeIdentifier;
+
+        if (body is BlockSyntax bodyBlock)
+        {
+            Body = bodyBlock;
+        }
+        else if (body is ExpressionSyntax bodyExpression)
+        {
+            Body = new ExpressionBlockSyntax(bodyExpression);
+        }
+        else
+        {
+            // HACK.PI: make this a ctor overload
+            throw new InvalidOperationException("Body must be a block or expression");
+        }
     }
 
     public VisibilityModifier VisibilityModifier { get; }
@@ -28,6 +41,8 @@ public class FunctionSyntax : BodySyntax
     public bool Throws { get; }
 
     public TypeIdentifierSyntax? ReturnTypeIdentifier { get; }
+    
+    public BlockSyntax Body { get; }
 
     public TypeReference? ReturnType { get; set; }
 

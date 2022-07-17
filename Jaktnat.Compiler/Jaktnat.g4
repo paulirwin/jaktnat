@@ -5,7 +5,9 @@ file: declaration* EOF;
 declaration: function
     | classDeclaration;
 
-function: visibilityModifier? FUNCTION NAME LPAREN parameterList? RPAREN THROWS? functionReturnType? block;
+function: visibilityModifier? FUNCTION NAME LPAREN parameterList? RPAREN 
+    THROWS? functionReturnType? 
+    (block | (FATARROW expression));
 
 functionReturnType: ARROW type;
 
@@ -262,6 +264,7 @@ STRING: '"' ( ~'"' | '\\' '"' )* '"';
 
 DOUBLECOLON: '::';
 ARROW: '->';
+FATARROW: '=>';
 LPAREN: '(';
 RPAREN: ')';
 LCURLY: '{';
