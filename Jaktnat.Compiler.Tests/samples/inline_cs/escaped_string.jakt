@@ -1,0 +1,10 @@
+/// Expect:
+/// - output: "\"test\"\n"
+
+function main() {
+    unsafe {
+        csharp {
+            "System.Console.Write(\"\\\"test\\\"\\n\");"
+        }
+    }
+}

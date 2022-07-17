@@ -541,6 +541,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             float f => $"{f}f",
             double d => $"{d}d",
             decimal m => $"{m}m",
+            string s => SymbolDisplay.FormatLiteral(s, true),
+            char c => SymbolDisplay.FormatLiteral(c, true),
             _ => literal.ToString() ?? throw new CompilerError("Literal evaluated to null")
         };
 

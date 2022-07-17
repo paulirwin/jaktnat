@@ -64,6 +64,12 @@
     <EmbeddedResource Include="samples\control_flow\defer_in_defer.jakt" />
     <None Remove="samples\inline_cs\inline_cpp.jakt" />
     <EmbeddedResource Include="samples\inline_cs\inline_cs.jakt" />
+    <None Remove="samples\inline_cs\block_statements_not_string.jakt" />
+    <EmbeddedResource Include="samples\inline_cs\block_statements_not_string.jakt" />
+    <None Remove="samples\inline_cs\escaped_string.jakt" />
+    <EmbeddedResource Include="samples\inline_cs\escaped_string.jakt" />
+    <None Remove="samples\inline_cs\outside_unsafe_block.jakt" />
+    <EmbeddedResource Include="samples\inline_cs\outside_unsafe_block.jakt" />
   </ItemGroup>
 
   <ItemGroup>

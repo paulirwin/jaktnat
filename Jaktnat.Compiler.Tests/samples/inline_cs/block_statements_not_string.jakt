@@ -1,0 +1,10 @@
+/// Expect:
+/// - error: "Expected block of strings\n"
+
+function main() {
+    unsafe {
+        csharp {
+            foo()
+        }
+    }
+}
