@@ -62,6 +62,7 @@ Language features:
 - [X] Binary expressions (i.e. `x + 2`)
 - [X] Block syntax and scoping
 - [X] `break` and `continue` statements
+- [X] `for`-`in` loop statements
 - [X] Calling functions (i.e. `bubble_sort(values: v)`)
 - [X] Accessing non-Jaktnät .NET types (limited support)
 - [X] Comments
