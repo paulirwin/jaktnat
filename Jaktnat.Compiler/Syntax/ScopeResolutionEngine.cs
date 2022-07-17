@@ -121,7 +121,7 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(trySyntax.Catch, parentBlock);
                 break;
             case CatchSyntax catchSyntax:
-                ResolveScopes(catchSyntax.CatchIdentifier, catchSyntax.CatchBlock);
+                ResolveScopes(catchSyntax.Identifier, catchSyntax.CatchBlock);
                 ResolveScopes(catchSyntax.CatchBlock, parentBlock);
                 break;
             case ThrowSyntax throwSyntax:
@@ -154,8 +154,13 @@ internal static class ScopeResolutionEngine
             case UnsafeBlockSyntax unsafeBlock:
                 ResolveScopes(unsafeBlock.Block, parentBlock);
                 break;
+            case ForInSyntax forInSyntax:
+                ResolveScopes(forInSyntax.Identifier, forInSyntax.Block);
+                ResolveScopes(forInSyntax.Expression, parentBlock);
+                ResolveScopes(forInSyntax.Block, parentBlock);
+                break;
             case IdentifierExpressionSyntax:
-            case CatchIdentifierSyntax:
+            case BlockScopedIdentifierSyntax:
             case LiteralExpressionSyntax:
             case ParameterSyntax:
             case PropertySyntax:

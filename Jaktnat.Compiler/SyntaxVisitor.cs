@@ -176,7 +176,7 @@ internal static class SyntaxVisitor
         }
         else if (node is CatchSyntax catchSyntax)
         {
-            VisitInternal(obj, context, catchSyntax.CatchIdentifier);
+            VisitInternal(obj, context, catchSyntax.Identifier);
             VisitInternal(obj, context, catchSyntax.CatchBlock);
         }
         else if (node is ScopeAccessSyntax scopeAccess)
@@ -207,6 +207,16 @@ internal static class SyntaxVisitor
         else if (node is CSharpBlockSyntax csharpBlock)
         {
             VisitInternal(obj, context, csharpBlock.Block);
+        }
+        else if (node is ForInSyntax forInSyntax)
+        {
+            VisitInternal(obj, context, forInSyntax.Expression);
+            VisitInternal(obj, context, forInSyntax.Identifier);
+            
+            // HACK.PI: Invoke an extra visit here before visiting block
+            InvokeVisit(obj, context, node);
+            
+            VisitInternal(obj, context, forInSyntax.Block);
         }
 
         InvokeVisit(obj, context, node);

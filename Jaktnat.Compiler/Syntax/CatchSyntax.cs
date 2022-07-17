@@ -2,15 +2,15 @@
 
 public class CatchSyntax : SyntaxNode
 {
-    public CatchSyntax(CatchIdentifierSyntax catchIdentifier, BlockSyntax catchBlock)
+    public CatchSyntax(BlockScopedIdentifierSyntax identifier, BlockSyntax catchBlock)
     {
-        CatchIdentifier = catchIdentifier;
+        Identifier = identifier;
         CatchBlock = catchBlock;
     }
 
-    public CatchIdentifierSyntax CatchIdentifier { get; }
+    public BlockScopedIdentifierSyntax Identifier { get; }
 
     public BlockSyntax CatchBlock { get; }
 
-    public override string ToString() => $"catch {CatchIdentifier} {CatchBlock}";
+    public override string ToString() => $"catch {Identifier} {CatchBlock}";
 }

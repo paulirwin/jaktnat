@@ -70,6 +70,12 @@
     <EmbeddedResource Include="samples\inline_cs\escaped_string.jakt" />
     <None Remove="samples\inline_cs\outside_unsafe_block.jakt" />
     <EmbeddedResource Include="samples\inline_cs\outside_unsafe_block.jakt" />
+    <None Remove="samples\arrays\array_bad.jakt" />
+    <EmbeddedResource Include="samples\arrays\array_bad.jakt" />
+    <None Remove="samples\arrays\array_bad2.jakt" />
+    <EmbeddedResource Include="samples\arrays\array_bad2.jakt" />
+    <None Remove="samples\arrays\array_iterator.jakt" />
+    <EmbeddedResource Include="samples\arrays\array_iterator.jakt" />
   </ItemGroup>
 
   <ItemGroup>

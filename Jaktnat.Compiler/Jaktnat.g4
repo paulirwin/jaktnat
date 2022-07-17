@@ -42,7 +42,10 @@ statement:
     | returnStatement
     | deferStatement
     | unsafeBlock
-    | csharpBlock;
+    | csharpBlock
+    | forInStatement;
+    
+forInStatement: FOR identifier IN expression block;
     
 unsafeBlock: UNSAFE block;
 
@@ -243,6 +246,8 @@ NOT: 'not';
 THROWS: 'throws';
 UNSAFE: 'unsafe';
 CSHARP: 'csharp';
+FOR: 'for';
+IN: 'in';
 
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;

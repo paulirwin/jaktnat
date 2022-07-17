@@ -1,0 +1,10 @@
+/// Expect:
+/// - output: "foo\nbar\nbaz\n"
+
+function main() {
+    let words = ["foo", "bar", "baz"]
+    // Jaktnat change, was: for word in words.iterator() {
+    for word in words {
+        println("{}", word)
+    }
+}

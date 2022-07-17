@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Collections;
+using System.Reflection;
 using Jaktnat.Compiler.ObjectModel;
 using Jaktnat.Compiler.Syntax;
 
@@ -25,12 +26,14 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<ClassDeclarationSyntax>,
     ISyntaxVisitor<ParenthesizedExpressionSyntax>,
     ISyntaxVisitor<ScopeAccessSyntax>,
-    ISyntaxVisitor<CatchIdentifierSyntax>,
+    ISyntaxVisitor<BlockScopedIdentifierSyntax>,
     ISyntaxVisitor<MemberFunctionDeclarationSyntax>,
     ISyntaxVisitor<ThisExpressionSyntax>,
     ISyntaxVisitor<DeferSyntax>,
     ISyntaxVisitor<UnsafeBlockSyntax>,
-    ISyntaxVisitor<CSharpBlockSyntax>
+    ISyntaxVisitor<CSharpBlockSyntax>,
+    ISyntaxVisitor<ForInSyntax>,
+    ISyntaxVisitor<CatchSyntax>
 {
     private static readonly IReadOnlyList<Type> SignedWideningTypes = new[]
     {
@@ -540,7 +543,7 @@ internal class NameResolutionEngine :
         // TODO: fix this
         if (distinctTypes.Count > 1)
         {
-            throw new CompilerError("All items in an array expression must currently be the same type.");
+            throw new CompilerError("All items in an array expression must be the same type.");
         }
 
         node.ExpressionType = distinctTypes[0].ExpressionType!.MakeArrayType();
@@ -798,15 +801,14 @@ internal class NameResolutionEngine :
         }
     }
 
-    public void Visit(CompilationContext context, CatchIdentifierSyntax node)
+    public void Visit(CompilationContext context, BlockScopedIdentifierSyntax node)
     {
         if (node.ParentBlock == null)
         {
-            throw new CompilerError("Scope resolution for catch block not done properly, should always have a parent block");
+            throw new CompilerError("Scope resolution for block-scoped identifier not done properly, should always have a parent block");
         }
 
         node.ParentBlock.Declarations.Add(node.Name, node);
-        node.Type = typeof(Exception);
     }
 
     public void Visit(CompilationContext context, MemberFunctionDeclarationSyntax node)
@@ -877,5 +879,61 @@ internal class NameResolutionEngine :
         {
             throw new CompilerError("C# blocks must be within an unsafe block");
         }
+    }
+
+    public void Visit(CompilationContext context, ForInSyntax node)
+    {
+        if (node.Identifier.Type == null)
+        {
+            if (node.Expression.ExpressionType is not { } exprType)
+            {
+                throw new CompilerError("Unable to determine type for for-in loop identifier since expression does not have type");
+            }
+
+            if (exprType is RuntimeTypeReference runtimeType)
+            {
+                if (runtimeType.RuntimeType.IsArray)
+                {
+                    node.Identifier.Type = runtimeType.RuntimeType.GetElementType()!;
+                }
+                else if (runtimeType.RuntimeType.IsAssignableTo(typeof(IEnumerable)))
+                {
+                    var interfaces = runtimeType.RuntimeType.GetInterfaces()
+                        .Where(i => i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                        .ToList();
+
+                    if (interfaces.Count == 0)
+                    {
+                        throw new CompilerError("Cannot for-in over something that isn't IEnumerable");
+                    }
+
+                    var innerTypes = interfaces.Select(i => i.GetGenericArguments()[0]).ToList();
+
+                    if (innerTypes.Count > 0)
+                    {
+                        throw new CompilerError("Enumerable type is ambiguous, must use explicit type");
+                    }
+
+                    node.Identifier.Type = innerTypes[0];
+                }
+                else
+                {
+                    throw new CompilerError("Cannot for-in over something that isn't IEnumerable");
+                }
+            }
+        }
+    }
+
+    public void PreVisit(CompilationContext context, ForInSyntax node)
+    {
+    }
+
+    public void Visit(CompilationContext context, CatchSyntax node)
+    {
+    }
+
+    public void PreVisit(CompilationContext context, CatchSyntax node)
+    {
+        node.Identifier.Type = typeof(Exception);
     }
 }

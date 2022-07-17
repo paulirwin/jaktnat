@@ -1,8 +1,8 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class CatchIdentifierSyntax : DeclarationSyntax
+public class BlockScopedIdentifierSyntax : DeclarationSyntax
 {
-    public CatchIdentifierSyntax(string name)
+    public BlockScopedIdentifierSyntax(string name)
         : base(name, null, false)
     {
     }

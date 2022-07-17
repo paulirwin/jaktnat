@@ -63,8 +63,29 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             DeferSyntax defer => VisitDefer(context, defer),
             UnsafeBlockSyntax unsafeBlock => VisitUnsafeBlock(context, unsafeBlock),
             CSharpBlockSyntax csharpBlock => VisitCSharpBlock(context, csharpBlock),
+            ForInSyntax forInSyntax => VisitForInSyntax(context, forInSyntax),
             _ => throw new NotImplementedException($"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode? VisitForInSyntax(CompilationContext context, ForInSyntax forInSyntax)
+    {
+        if (Visit(context, forInSyntax.Expression) is not CSExpressionSyntax expression)
+        {
+            throw new CompilerError("Expected an expression for for-in statement target");
+        }
+
+        if (Visit(context, forInSyntax.Block) is not CSBlockSyntax block)
+        {
+            // TODO: support block-less expression statements?
+            throw new CompilerError("Expected a block for for-in statement body");
+        }
+
+        return SyntaxFactory.ForEachStatement(
+            SyntaxFactory.IdentifierName("var"),
+            forInSyntax.Identifier.Name,
+            expression,
+            block);
     }
 
     private CSharpSyntaxNode? VisitCSharpBlock(CompilationContext context, CSharpBlockSyntax csharpBlock)
@@ -213,7 +234,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
 
         catches.Add(SyntaxFactory.CatchClause(
-            SyntaxFactory.CatchDeclaration(SyntaxFactory.ParseTypeName("Exception"), SyntaxFactory.ParseToken(trySyntax.Catch.CatchIdentifier.Name)),
+            SyntaxFactory.CatchDeclaration(SyntaxFactory.ParseTypeName("Exception"), SyntaxFactory.ParseToken(trySyntax.Catch.Identifier.Name)),
             null,
             catchBlock));
 

@@ -867,7 +867,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Unable to parse catch clause block", catchClause.start);
         }
 
-        var catchSyntax = new CatchSyntax(new CatchIdentifierSyntax(catchIdentifier.Name), catchBlock);
+        var catchSyntax = new CatchSyntax(new BlockScopedIdentifierSyntax(catchIdentifier.Name), catchBlock);
 
         return new TrySyntax(tryable, catchSyntax);
     }
@@ -950,5 +950,22 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
 
         return new CSharpBlockSyntax(block);
+    }
+
+    public override SyntaxNode? VisitForInStatement(JaktnatParser.ForInStatementContext context)
+    {
+        string identifier = context.identifier().GetText();
+
+        if (Visit(context.expression()) is not ExpressionSyntax expression)
+        {
+            throw new ParserError("Unable to parse for-in target expression", context.start);
+        }
+
+        if (Visit(context.block()) is not BlockSyntax block)
+        {
+            throw new ParserError("Unable to parse for-in block", context.start);
+        }
+        
+        return new ForInSyntax(new BlockScopedIdentifierSyntax(identifier), expression, block);
     }
 }
