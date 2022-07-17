@@ -8,10 +8,10 @@ An experimental port of the [SerenityOS](https://www.serenityos.org/) [Jakt prog
 
 ## Basic usage
 
-Compile `Jaktnat.exe` in Visual Studio 2022 or via the `dotnet` CLI (or Rider, or whatever), then run:
+Compile `jaktnat.exe` (or `jaktnat` on macOS/Linux) in Visual Studio 2022 or via the `dotnet` CLI (or Rider, or whatever), then run:
 
 ```PowerShell
-path/to/Jaktnat.exe my_file.jakt
+path/to/jaktnat build my_file.jakt
 ```
 
 This will produce a file called `my_file.exe` in the `bin` subfolder of the current path. 
@@ -25,10 +25,8 @@ dotnet bin/my_file.exe
 
 Jaktnät aims to implement as much of the Jakt programming language as possible, on the .NET runtime.
 Unlike Jakt, which transpiles to C++, it is a compiler that produces .NET assemblies executable via the `dotnet` CLI.
-However, it cheats a bit by transforming its Abstract Syntax Tree (AST) into a C# AST via Roslyn, and then uses Roslyn to compile the .NET assembly.
-So I guess you could say that it *does* transpile to C#, just via an AST in memory without writing a source file to disk.
-
-(Aside: it would be trivial to make Jaktnät transpile to C# given this, and that is something I aim to implement soon as an option.)
+However, it cheats a bit by transpiling its Abstract Syntax Tree (AST) into a C# AST via Roslyn, and then uses Roslyn to compile the .NET assembly.
+You can view or output the transpiled C# instead of compiling it into an assembly via the `jaktnat transpile` command.
 
 The first version of the backend used Mono.Cecil to emit IL into the assembly, but this is unnecessarily complex if accepting C# language constraints is viable. 
 I was able to move much faster using Roslyn instead, so I've relegated the Mono.Cecil backend to an obsolete experiment with only minimal language support currently.
