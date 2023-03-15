@@ -606,6 +606,11 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
     private CSharpSyntaxNode VisitCall(CompilationContext context, CallSyntax call)
     {
+        if (call.MatchedMethod is DeclaredFunction declaredFunction)
+        {
+            ValidateCallArgumentNames(declaredFunction, call.Arguments);
+        }
+        
         var args = new List<ArgumentSyntax>();
 
         foreach (var arg in call.Arguments)
@@ -676,6 +681,42 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
 
         throw new CompilerError("No matched method to call");
+    }
+
+    private static void ValidateCallArgumentNames(DeclaredFunction declaredFunction, IList<CallArgumentSyntax> callArguments)
+    {
+        if (declaredFunction.FunctionSyntax.Parameters is not { Parameters: { } parameters })
+        {
+            return;
+        }
+
+        for (var index = 0; index < parameters.Count; index++)
+        {
+            var param = parameters[index];
+
+            if (callArguments.Count <= index)
+            {
+                continue;
+            }
+            
+            if (!param.Anonymous)
+            {
+                var arg = callArguments[index];
+                
+                if (arg.ParameterName is null)
+                {
+                    if (arg.Expression is not IdentifierExpressionSyntax identifier
+                        || !identifier.Name.Equals(param.Name))
+                    {
+                        throw new CompilerError("Wrong parameter name in argument label");
+                    }
+                }
+                else if (!arg.ParameterName.Equals(param.Name))
+                {
+                    throw new CompilerError("Wrong parameter name in argument label");
+                }
+            }
+        }
     }
 
     private CSharpSyntaxNode VisitBlock(CompilationContext context, BlockSyntax block)
