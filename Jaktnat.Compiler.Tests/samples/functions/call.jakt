@@ -1,0 +1,10 @@
+/// Expect:
+/// - output: "Well, hello friends.\n"
+
+function greet() {
+    println("Well, hello friends.")
+}
+
+function main() {
+    greet()
+}

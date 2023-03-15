@@ -93,6 +93,23 @@
         <EmbeddedResource Include="samples\functions\argument_labels_bad2.jakt" />
         <None Remove="samples\functions\argument_labels.jakt" />
         <EmbeddedResource Include="samples\functions\argument_labels.jakt" />
+        <None Remove="samples\functions\arrow_function.jakt" />
+        <EmbeddedResource Include="samples\functions\arrow_function.jakt" />
+        <None Remove="samples\functions\call_missing_function.jakt" />
+        <EmbeddedResource Include="samples\functions\call_missing_function.jakt" />
+        <None Remove="samples\functions\call_with_arg.jakt" />
+        <EmbeddedResource Include="samples\functions\call_with_arg.jakt" />
+        <None Remove="samples\functions\call_with_bad_args.jakt" />
+        <EmbeddedResource Include="samples\functions\call_with_bad_args.jakt" />
+        <None Remove="samples\functions\call_with_return.jakt" />
+        <EmbeddedResource Include="samples\functions\call_with_return.jakt" />
+        <None Remove="samples\functions\call_with_two_args.jakt" />
+        <EmbeddedResource Include="samples\functions\call_with_two_args.jakt" />
+        <None Remove="samples\functions\call_wrong_arg_count.jakt" />
+        <EmbeddedResource Include="samples\functions\call_wrong_arg_count.jakt" />
+        <None Remove="samples\functions\call.jakt" />
+        <EmbeddedResource Include="samples\functions\call.jakt" />
+        <None Remove="samples\functions\default_arguments_bad_type.jakt" />
     </ItemGroup>
 
     <ItemGroup>
