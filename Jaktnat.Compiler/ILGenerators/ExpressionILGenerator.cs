@@ -9,6 +9,11 @@ internal static class ExpressionILGenerator
     {
         if (expression is LiteralExpressionSyntax literal)
         {
+            if (literal.ExpressionType == null)
+            {
+                throw new CompilerError("Expression type of literal cannot be null");
+            }
+            
             if (targetType == null || literal.ExpressionType.Equals(targetType))
             {
                 var op = GetLoadLiteralOp(il, literal.Value);

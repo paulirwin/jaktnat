@@ -6,7 +6,7 @@ public abstract class ExpressionSyntax : SyntaxNode
     {
     }
 
-    protected ExpressionSyntax(TypeReference? expressionType)
+    protected ExpressionSyntax(TypeReference expressionType)
     {
         ExpressionType = expressionType;
     }

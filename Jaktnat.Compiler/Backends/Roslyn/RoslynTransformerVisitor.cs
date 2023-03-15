@@ -541,7 +541,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         var type = variableDeclaration.TypeIdentifier?.Type
                    ?? variableDeclaration.InitializerExpression?.ExpressionType;
 
-        if (type.FullName == null)
+        if (type?.FullName == null)
         {
             throw new CompilerError("Type not determined for variable declaration");
         }

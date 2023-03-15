@@ -1,0 +1,10 @@
+/// Expect:
+/// - output: "3\n"
+
+function main() {
+    mut v = [1, 2, 3]
+
+    let last = v.pop()
+
+    println("{}", last!)
+}

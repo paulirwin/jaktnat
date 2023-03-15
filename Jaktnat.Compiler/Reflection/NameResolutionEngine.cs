@@ -104,7 +104,7 @@ internal class NameResolutionEngine :
                     .GetMembers()
                     .Where(i => i.Name == identifier.Name)
                     .ToList();
-
+                
                 if (members.Count == 0)
                 {
                     throw new CompilerError($"Unable to resolve identifier {identifier.Name} on type {identifier.ParentTarget.ExpressionType}");

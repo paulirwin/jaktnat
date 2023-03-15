@@ -1,127 +1,140 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <WarningsAsErrors>nullable</WarningsAsErrors>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
 
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+    <ItemGroup>
+        <None Remove="samples\basics\bubble_sort.jakt"/>
+        <None Remove="samples\basics\comments.jakt"/>
+        <None Remove="samples\basics\error.jakt"/>
+        <None Remove="samples\basics\float_literals.jakt"/>
+        <None Remove="samples\basics\format.jakt"/>
+        <None Remove="samples\basics\hello.jakt"/>
+        <None Remove="samples\basics\hello_number.jakt"/>
+        <None Remove="samples\basics\is.jakt"/>
+        <None Remove="samples\basics\opening_curly_brace_on_newline.jakt"/>
+        <None Remove="samples\boolean\logical_and.jakt"/>
+        <None Remove="samples\boolean\logical_not.jakt"/>
+        <None Remove="samples\boolean\logical_or.jakt"/>
+        <None Remove="samples\classes\class.jakt"/>
+        <None Remove="samples\control_flow\continue.jakt"/>
+        <None Remove="samples\control_flow\fizzbuzz.jakt"/>
+        <None Remove="samples\control_flow\if.jakt"/>
+        <None Remove="samples\control_flow\if2.jakt"/>
+        <None Remove="samples\control_flow\if3.jakt"/>
+        <None Remove="samples\control_flow\if4.jakt"/>
+        <None Remove="samples\control_flow\if5.jakt"/>
+        <None Remove="samples\control_flow\loop.jakt"/>
+        <None Remove="samples\control_flow\return_nothing.jakt"/>
+        <None Remove="samples\control_flow\try_catch.jakt"/>
+        <None Remove="samples\control_flow\while.jakt"/>
+        <None Remove="samples\control_flow\while2.jakt"/>
+        <None Remove="samples\control_flow\while3.jakt"/>
+        <None Remove="samples\control_flow\while_with_bad_expression_type.jakt"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="samples\basics\bubble_sort.jakt" />
-    <None Remove="samples\basics\comments.jakt" />
-    <None Remove="samples\basics\error.jakt" />
-    <None Remove="samples\basics\float_literals.jakt" />
-    <None Remove="samples\basics\format.jakt" />
-    <None Remove="samples\basics\hello.jakt" />
-    <None Remove="samples\basics\hello_number.jakt" />
-    <None Remove="samples\basics\is.jakt" />
-    <None Remove="samples\basics\opening_curly_brace_on_newline.jakt" />
-    <None Remove="samples\boolean\logical_and.jakt" />
-    <None Remove="samples\boolean\logical_not.jakt" />
-    <None Remove="samples\boolean\logical_or.jakt" />
-    <None Remove="samples\classes\class.jakt" />
-    <None Remove="samples\control_flow\continue.jakt" />
-    <None Remove="samples\control_flow\fizzbuzz.jakt" />
-    <None Remove="samples\control_flow\if.jakt" />
-    <None Remove="samples\control_flow\if2.jakt" />
-    <None Remove="samples\control_flow\if3.jakt" />
-    <None Remove="samples\control_flow\if4.jakt" />
-    <None Remove="samples\control_flow\if5.jakt" />
-    <None Remove="samples\control_flow\loop.jakt" />
-    <None Remove="samples\control_flow\return_nothing.jakt" />
-    <None Remove="samples\control_flow\try_catch.jakt" />
-    <None Remove="samples\control_flow\while.jakt" />
-    <None Remove="samples\control_flow\while2.jakt" />
-    <None Remove="samples\control_flow\while3.jakt" />
-    <None Remove="samples\control_flow\while_with_bad_expression_type.jakt" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="samples\basics\bubble_sort.jakt"/>
+        <EmbeddedResource Include="samples\basics\error.jakt"/>
+        <EmbeddedResource Include="samples\basics\float_literals.jakt"/>
+        <None Remove="samples\classes\static_method.jakt"/>
+        <EmbeddedResource Include="samples\classes\static_method.jakt"/>
+        <None Remove="samples\classes\static_method_called_on_object_instance.jakt"/>
+        <EmbeddedResource Include="samples\classes\static_method_called_on_object_instance.jakt"/>
+        <None Remove="samples\classes\method.jakt"/>
+        <EmbeddedResource Include="samples\classes\method.jakt"/>
+        <None Remove="samples\classes\call_private_from_public.jakt"/>
+        <EmbeddedResource Include="samples\classes\call_private_from_public.jakt"/>
+        <None Remove="samples\classes\mutating_method_called_on_immutable_object_instance.jakt"/>
+        <EmbeddedResource Include="samples\classes\mutating_method_called_on_immutable_object_instance.jakt"/>
+        <None Remove="samples\classes\throwing_method.jakt"/>
+        <EmbeddedResource Include="samples\classes\throwing_method.jakt"/>
+        <None Remove="samples\control_flow\defer_stmt.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\defer_stmt.jakt"/>
+        <None Remove="samples\control_flow\defer_return_error.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\defer_return_error.jakt"/>
+        <None Remove="samples\control_flow\defer.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\defer.jakt"/>
+        <None Remove="samples\control_flow\defer_in_defer.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\defer_in_defer.jakt"/>
+        <None Remove="samples\inline_cs\inline_cpp.jakt"/>
+        <EmbeddedResource Include="samples\inline_cs\inline_cs.jakt"/>
+        <None Remove="samples\inline_cs\block_statements_not_string.jakt"/>
+        <EmbeddedResource Include="samples\inline_cs\block_statements_not_string.jakt"/>
+        <None Remove="samples\inline_cs\escaped_string.jakt"/>
+        <EmbeddedResource Include="samples\inline_cs\escaped_string.jakt"/>
+        <None Remove="samples\inline_cs\outside_unsafe_block.jakt"/>
+        <EmbeddedResource Include="samples\inline_cs\outside_unsafe_block.jakt"/>
+        <None Remove="samples\arrays\array_bad.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array_bad.jakt"/>
+        <None Remove="samples\arrays\array_bad2.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array_bad2.jakt"/>
+        <None Remove="samples\arrays\array_iterator.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array_iterator.jakt"/>
+        <None Remove="samples\arrays\array_param.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array_param.jakt"/>
+        <None Remove="samples\arrays\array_pop.jakt"/>
+        <None Remove="samples\arrays\array_shorthand.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array_shorthand.jakt"/>
+        <None Remove="samples\arrays\array1.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array1.jakt"/>
+        <None Remove="samples\arrays\array2.jakt"/>
+        <EmbeddedResource Include="samples\arrays\array2.jakt"/>
+        <None Remove="samples\arrays\contains.jakt"/>
+        <EmbeddedResource Include="samples\arrays\contains.jakt"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="samples\basics\bubble_sort.jakt" />
-    <EmbeddedResource Include="samples\basics\error.jakt" />
-    <EmbeddedResource Include="samples\basics\float_literals.jakt" />
-    <None Remove="samples\classes\static_method.jakt" />
-    <EmbeddedResource Include="samples\classes\static_method.jakt" />
-    <None Remove="samples\classes\static_method_called_on_object_instance.jakt" />
-    <EmbeddedResource Include="samples\classes\static_method_called_on_object_instance.jakt" />
-    <None Remove="samples\classes\method.jakt" />
-    <EmbeddedResource Include="samples\classes\method.jakt" />
-    <None Remove="samples\classes\call_private_from_public.jakt" />
-    <EmbeddedResource Include="samples\classes\call_private_from_public.jakt" />
-    <None Remove="samples\classes\mutating_method_called_on_immutable_object_instance.jakt" />
-    <EmbeddedResource Include="samples\classes\mutating_method_called_on_immutable_object_instance.jakt" />
-    <None Remove="samples\classes\throwing_method.jakt" />
-    <EmbeddedResource Include="samples\classes\throwing_method.jakt" />
-    <None Remove="samples\control_flow\defer_stmt.jakt" />
-    <EmbeddedResource Include="samples\control_flow\defer_stmt.jakt" />
-    <None Remove="samples\control_flow\defer_return_error.jakt" />
-    <EmbeddedResource Include="samples\control_flow\defer_return_error.jakt" />
-    <None Remove="samples\control_flow\defer.jakt" />
-    <EmbeddedResource Include="samples\control_flow\defer.jakt" />
-    <None Remove="samples\control_flow\defer_in_defer.jakt" />
-    <EmbeddedResource Include="samples\control_flow\defer_in_defer.jakt" />
-    <None Remove="samples\inline_cs\inline_cpp.jakt" />
-    <EmbeddedResource Include="samples\inline_cs\inline_cs.jakt" />
-    <None Remove="samples\inline_cs\block_statements_not_string.jakt" />
-    <EmbeddedResource Include="samples\inline_cs\block_statements_not_string.jakt" />
-    <None Remove="samples\inline_cs\escaped_string.jakt" />
-    <EmbeddedResource Include="samples\inline_cs\escaped_string.jakt" />
-    <None Remove="samples\inline_cs\outside_unsafe_block.jakt" />
-    <EmbeddedResource Include="samples\inline_cs\outside_unsafe_block.jakt" />
-    <None Remove="samples\arrays\array_bad.jakt" />
-    <EmbeddedResource Include="samples\arrays\array_bad.jakt" />
-    <None Remove="samples\arrays\array_bad2.jakt" />
-    <EmbeddedResource Include="samples\arrays\array_bad2.jakt" />
-    <None Remove="samples\arrays\array_iterator.jakt" />
-    <EmbeddedResource Include="samples\arrays\array_iterator.jakt" />
-    <None Remove="samples\arrays\array_param.jakt" />
-    <EmbeddedResource Include="samples\arrays\array_param.jakt" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="samples\basics\comments.jakt"/>
+        <EmbeddedResource Include="samples\basics\format.jakt"/>
+        <EmbeddedResource Include="samples\basics\hello.jakt"/>
+        <EmbeddedResource Include="samples\basics\hello_number.jakt"/>
+        <EmbeddedResource Include="samples\basics\is.jakt"/>
+        <EmbeddedResource Include="samples\basics\opening_curly_brace_on_newline.jakt"/>
+        <EmbeddedResource Include="samples\boolean\logical_and.jakt"/>
+        <EmbeddedResource Include="samples\boolean\logical_not.jakt"/>
+        <EmbeddedResource Include="samples\boolean\logical_or.jakt"/>
+        <EmbeddedResource Include="samples\classes\class.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\continue.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\fizzbuzz.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\if.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\if2.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\if3.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\if4.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\if5.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\loop.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\return_nothing.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\try_catch.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\while.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\while2.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\while3.jakt"/>
+        <EmbeddedResource Include="samples\control_flow\while_with_bad_expression_type.jakt"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="samples\basics\comments.jakt" />
-    <EmbeddedResource Include="samples\basics\format.jakt" />
-    <EmbeddedResource Include="samples\basics\hello.jakt" />
-    <EmbeddedResource Include="samples\basics\hello_number.jakt" />
-    <EmbeddedResource Include="samples\basics\is.jakt" />
-    <EmbeddedResource Include="samples\basics\opening_curly_brace_on_newline.jakt" />
-    <EmbeddedResource Include="samples\boolean\logical_and.jakt" />
-    <EmbeddedResource Include="samples\boolean\logical_not.jakt" />
-    <EmbeddedResource Include="samples\boolean\logical_or.jakt" />
-    <EmbeddedResource Include="samples\classes\class.jakt" />
-    <EmbeddedResource Include="samples\control_flow\continue.jakt" />
-    <EmbeddedResource Include="samples\control_flow\fizzbuzz.jakt" />
-    <EmbeddedResource Include="samples\control_flow\if.jakt" />
-    <EmbeddedResource Include="samples\control_flow\if2.jakt" />
-    <EmbeddedResource Include="samples\control_flow\if3.jakt" />
-    <EmbeddedResource Include="samples\control_flow\if4.jakt" />
-    <EmbeddedResource Include="samples\control_flow\if5.jakt" />
-    <EmbeddedResource Include="samples\control_flow\loop.jakt" />
-    <EmbeddedResource Include="samples\control_flow\return_nothing.jakt" />
-    <EmbeddedResource Include="samples\control_flow\try_catch.jakt" />
-    <EmbeddedResource Include="samples\control_flow\while.jakt" />
-    <EmbeddedResource Include="samples\control_flow\while2.jakt" />
-    <EmbeddedResource Include="samples\control_flow\while3.jakt" />
-    <EmbeddedResource Include="samples\control_flow\while_with_bad_expression_type.jakt" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0"/>
+        <PackageReference Include="xunit" Version="2.4.1"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector" Version="3.1.2">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
-    <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.1.2">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Jaktnat.Compiler\Jaktnat.Compiler.csproj"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Jaktnat.Compiler\Jaktnat.Compiler.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="samples\arrays\array_pop.jakt"/>
+    </ItemGroup>
 
 </Project>

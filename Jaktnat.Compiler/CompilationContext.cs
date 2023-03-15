@@ -13,6 +13,14 @@ internal class CompilationContext
         RuntimeAssembly = runtimeAssembly;
         AssemblyName = assemblyName;
         LoadedAssemblies.Add(runtimeAssembly);
+
+        var coreLib = AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(i => i.GetName().Name == "System.Private.CoreLib");
+
+        if (coreLib != null)
+        {
+            LoadedAssemblies.Add(coreLib);
+        }
     }
 
     public string AssemblyName { get; }

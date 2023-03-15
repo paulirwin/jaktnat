@@ -67,10 +67,13 @@ internal class RoslynBackend : ICompilerBackend
     private IEnumerable<MetadataReference> GetMetadataReference(CompilationContext context)
     {
         var assemblyPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
-        
-        yield return MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Private.CoreLib.dll"));
-        yield return MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Console.dll"));
-        yield return MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll"));
+
+        if (assemblyPath != null)
+        {
+            yield return MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Private.CoreLib.dll"));
+            yield return MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Console.dll"));
+            yield return MetadataReference.CreateFromFile(Path.Combine(assemblyPath, "System.Runtime.dll"));
+        }
 
         foreach (var assembly in context.LoadedAssemblies)
         {

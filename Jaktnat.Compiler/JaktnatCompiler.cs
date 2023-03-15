@@ -37,7 +37,9 @@ public static class JaktnatCompiler
 
         // Phase 1: lexing and parsing
         var compilationUnit = ParseProgram(contents);
+        
         context = new CompilationContext(compilationUnit, runtimeAssembly, assemblyName);
+        
         FreeFunctionResolver.PopulateGlobals(context);
 
         // Phase 2: scope resolution

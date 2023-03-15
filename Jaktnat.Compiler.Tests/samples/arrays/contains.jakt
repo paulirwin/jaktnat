@@ -1,0 +1,9 @@
+/// Expect:
+/// - output: "True\nFalse\n"
+// TODO: Jaktnat change, uses Array.IndexOf instead of .contains, because we don't yet support extension methods
+
+function main() {
+    let arr = ["Well", "Hello", "Friends", "!"]
+    println("{}", Array.IndexOf(arr, "Hello") >= 0)
+    println("{}", Array.IndexOf(arr, "Goodbye") >= 0)
+}
