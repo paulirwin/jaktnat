@@ -40,6 +40,10 @@ internal static class SyntaxVisitor
 
             VisitInternal(obj, context, function.Body);
         }
+        else if (node is ExpressionBlockSyntax expressionBlock)
+        {
+            VisitInternal(obj, context, expressionBlock.Children[0]);
+        }
         else if (node is ParameterListSyntax parameterList)
         {
             foreach (var parameter in parameterList.Parameters)

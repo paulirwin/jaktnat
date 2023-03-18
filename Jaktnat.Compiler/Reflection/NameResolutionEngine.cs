@@ -504,7 +504,11 @@ internal class NameResolutionEngine :
 
     public void Visit(CompilationContext context, FunctionSyntax node)
     {
-        node.ReturnType = node.ReturnTypeIdentifier != null ? node.ReturnTypeIdentifier.Type : typeof(void);
+        node.ReturnType = node.ReturnTypeIdentifier != null 
+            ? node.ReturnTypeIdentifier.Type 
+            : node.Body is ExpressionBlockSyntax { Children: [ ExpressionSyntax fatArrowExpression ] }
+            ? fatArrowExpression.ExpressionType
+            : typeof(void);
 
         context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFunction(null, node));
     }

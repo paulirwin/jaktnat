@@ -830,17 +830,10 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         
         if (function.Body is ExpressionBlockSyntax expressionBodySyntax)
         {
-            if (expressionBodySyntax.Children.Count != 1 
-                || expressionBodySyntax.Children[0] is not ExpressionSyntax expr
+            if (expressionBodySyntax.Children is not [ExpressionSyntax expr] 
                 || Visit(context, expr) is not CSExpressionSyntax expressionBody)
             {
                 throw new CompilerError("Function body did not evaluate to an expression");
-            }
-
-            if (function.ReturnTypeIdentifier == null
-                && expr.ExpressionType != null)
-            {
-                baseDeclaration = baseDeclaration.WithReturnType(SyntaxFactory.ParseTypeName(expr.ExpressionType.FullName));
             }
 
             return baseDeclaration
