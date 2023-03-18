@@ -1,0 +1,13 @@
+/// Expect:
+/// - output: "19\nFalse\nTrue\n"
+// Jaktnat change: capitalization of expected output
+
+fn main() {
+    let x = "Well, hello friends"
+
+    // Jaktnat changes: use .Length property and String.IsNullOrEmpty function
+    println("{}", x.Length)
+    println("{}", String.IsNullOrEmpty(x))
+
+    println("{}", String.IsNullOrEmpty(""))
+}

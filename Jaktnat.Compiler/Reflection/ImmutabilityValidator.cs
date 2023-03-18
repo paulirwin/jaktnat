@@ -1,4 +1,3 @@
-using Jaktnat.Compiler.ObjectModel;
 using Jaktnat.Compiler.Syntax;
 
 namespace Jaktnat.Compiler.Reflection;

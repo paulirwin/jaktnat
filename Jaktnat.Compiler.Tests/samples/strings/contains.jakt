@@ -1,0 +1,14 @@
+/// Expect:
+/// - output: "False\nTrue\n"
+// Jaktnat change: capitalization of expected output
+
+fn main() {
+    // Jaktnat change: make mutable, since we cannot yet determine if .NET BCL 
+    // methods are mutating or not, so we assume they are.
+    // TODO: support detecting pure functions in BCL
+    mut x = "Well, hello friends"
+
+    // Jaktnat change: .Contains instead of .contains
+    println("{}", x.Contains("goodbye"))
+    println("{}", x.Contains("hello"))
+}
