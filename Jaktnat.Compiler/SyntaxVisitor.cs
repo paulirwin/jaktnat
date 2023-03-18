@@ -53,6 +53,11 @@ internal static class SyntaxVisitor
             {
                 VisitInternal(obj, context, parameter.TypeIdentifier);
             }
+
+            if (parameter.DefaultArgument != null)
+            {
+                VisitInternal(obj, context, parameter.DefaultArgument);
+            }
         }
         else if (node is ArraySyntax array)
         {

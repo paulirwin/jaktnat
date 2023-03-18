@@ -109,9 +109,16 @@
         <EmbeddedResource Include="samples\functions\call_wrong_arg_count.jakt" />
         <None Remove="samples\functions\call.jakt" />
         <EmbeddedResource Include="samples\functions\call.jakt" />
-        <None Remove="samples\functions\default_arguments_bad_type.jakt" />
         <None Remove="samples\functions\default_arguments.jakt" />
         <EmbeddedResource Include="samples\functions\default_arguments.jakt" />
+        <None Remove="samples\functions\default_arguments_bad_type.jakt" />
+        <EmbeddedResource Include="samples\functions\default_arguments_bad_type.jakt" />
+        <None Remove="samples\functions\default_arguments_complex.jakt" />
+        <None Remove="samples\functions\default_arguments_constructor.jakt" />
+        <None Remove="samples\functions\default_arguments_default_before_required.jakt" />
+        <None Remove="samples\functions\default_arguments_method.jakt" />
+        <None Remove="samples\functions\default_arguments_mixed.jakt" />
+        <None Remove="samples\functions\default_arguments_some_defaults.jakt" />
     </ItemGroup>
 
     <ItemGroup>

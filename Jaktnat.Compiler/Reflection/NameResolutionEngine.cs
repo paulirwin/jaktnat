@@ -553,13 +553,26 @@ internal class NameResolutionEngine :
             return;
         }
 
-        if (node.TypeIdentifier == null)
+        if (node.TypeIdentifier?.Type == null)
         {
             throw new CompilerError("Expected type identifier in parameter declaration");
         }
 
         node.ParentBlock.Declarations.Add(node.Name, node);
         node.Type = node.TypeIdentifier.Type;
+
+        if (node.DefaultArgument != null)
+        {
+            if (node.DefaultArgument.ExpressionType == null)
+            {
+                throw new CompilerError("Default argument expression has not yet been visited");
+            }
+
+            if (!ParameterTypeIsCompatible(node.Type, node.DefaultArgument.ExpressionType, true))
+            {
+                throw new CompilerError($"Type mismatch: expected '{node.Type}', but got '{node.DefaultArgument.ExpressionType}'");
+            }
+        }
     }
 
     public void Visit(CompilationContext context, ArraySyntax node)
