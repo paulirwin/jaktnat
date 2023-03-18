@@ -499,8 +499,20 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             throw new CompilerError("Parameter must have a type");
         }
 
-        return SyntaxFactory.Parameter(SyntaxFactory.Identifier(parameter.Name))
+        var syntax = SyntaxFactory.Parameter(SyntaxFactory.Identifier(parameter.Name))
             .WithType(SyntaxFactory.ParseTypeName(parameter.Type.FullName));
+
+        if (parameter.DefaultArgument is { } defaultArgument)
+        {
+            if (Visit(context, defaultArgument) is not CSExpressionSyntax defaultArgExpr)
+            {
+                throw new CompilerError("Default value did not evaluate to an expression");
+            }
+
+            syntax = syntax.WithDefault(SyntaxFactory.EqualsValueClause(defaultArgExpr));
+        }
+        
+        return syntax;
     }
 
     private CSharpSyntaxNode VisitIf(CompilationContext context, IfSyntax ifSyntax)

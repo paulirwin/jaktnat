@@ -3,7 +3,7 @@ namespace Jaktnat.Compiler.Syntax;
 public class ThisParameterSyntax : ParameterSyntax
 {
     public ThisParameterSyntax(bool mutable) 
-        : base(false, "this", mutable, null)
+        : base(false, "this", mutable, null, null)
     {
     }
 

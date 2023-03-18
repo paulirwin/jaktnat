@@ -25,7 +25,9 @@ parameter: thisParameter | namedParameter;
 
 thisParameter: (MUT | MUTABLE)? THIS;
 
-namedParameter: (ANON | ANONYMOUS)? NAME COLON MUTABLE? type;
+namedParameter: (ANON | ANONYMOUS)? NAME COLON MUTABLE? type defaultArgument?;
+
+defaultArgument: EQUAL expression;
 
 block: LCURLY statement* RCURLY;
 

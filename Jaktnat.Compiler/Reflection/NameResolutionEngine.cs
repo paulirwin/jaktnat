@@ -271,7 +271,9 @@ internal class NameResolutionEngine :
             var argsAsParams = call.Arguments
                 .Select((i, index) => new ParameterSyntax(i.ParameterName != null, 
                     i.ParameterName ?? $"arg{index}",
-                    true, new NamedTypeIdentifierSyntax(i.ArgumentType?.FullName ?? typeof(object).FullName!)))
+                    true, 
+                    new NamedTypeIdentifierSyntax(i.ArgumentType?.FullName ?? typeof(object).FullName!),
+                    null)) // TODO.PI: is this null correct for default expression?
                 .ToList();
 
             call.MatchedConstructor =
@@ -358,14 +360,43 @@ internal class NameResolutionEngine :
                     return true;
                 }
                 
-                if (call.Arguments.Count > 0 
-                    && declaredFunction.FunctionSyntax.Parameters is { } parameters)
+                if (declaredFunction.FunctionSyntax.Parameters is { } parameters)
                 {
+                    int paramOrdinal = 0;
+                    bool usingOrdinalArgs = true;
+                    var virtualArgTypes = new List<TypeReference?>();
+                    
+                    foreach (var parameter in parameters.GetNonThisParameters())
+                    {
+                        TypeReference? virtualArgType = null;
+                        
+                        // HACK.PI: does not currently support named out-of-order arguments
+                        if (usingOrdinalArgs)
+                        {
+                            if (paramOrdinal <= call.Arguments.Count - 1)
+                            {
+                                virtualArgType = call.Arguments[paramOrdinal++].ArgumentType;
+                            }
+                            else
+                            {
+                                usingOrdinalArgs = false;
+                            }
+                        }
+                        
+                        if (!usingOrdinalArgs 
+                            && parameter.DefaultArgument is { } defaultArgument)
+                        {
+                            virtualArgType = defaultArgument.ExpressionType;
+                        }
+                        
+                        virtualArgTypes.Add(virtualArgType);
+                    }
+                    
                     var parameterTypes = parameters.GetNonThisParameters()
                         .Select(i => i.Type).ToArray();
 
-                    if (parameterTypes.Length == call.Arguments.Count
-                        && ParameterTypesAreCompatible(parameterTypes, argTypes, allowImplicitLiteralConversion))
+                    if (parameterTypes.Length == virtualArgTypes.Count
+                        && ParameterTypesAreCompatible(parameterTypes, virtualArgTypes, allowImplicitLiteralConversion))
                     {
                         freeFunction = possibility;
                         return true;
@@ -727,7 +758,7 @@ internal class NameResolutionEngine :
     public void Visit(CompilationContext context, ClassDeclarationSyntax node)
     {
         var parameters = node.Members.OfType<PropertySyntax>()
-            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier) { ParentBlock = node.ParentBlock, Type = i.Type })
+            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier, null) { ParentBlock = node.ParentBlock, Type = i.Type })
             .ToList();
 
         node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));

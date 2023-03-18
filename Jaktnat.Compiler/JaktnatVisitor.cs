@@ -187,7 +187,19 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
                 throw new ParserError("Unable to parse parameter type", namedParameter.start);
             }
 
-            return new ParameterSyntax(anonymous, name, mutable, type);
+            ExpressionSyntax? defaultArgumentExpression = null;
+
+            if (namedParameter.defaultArgument() is { } defaultArgument)
+            {
+                if (VisitExpression(defaultArgument.expression()) is not ExpressionSyntax defaultExpression)
+                {
+                    throw new ParserError("Unable to parse default argument expression", defaultArgument.start);
+                }
+
+                defaultArgumentExpression = defaultExpression;
+            }
+
+            return new ParameterSyntax(anonymous, name, mutable, type, defaultArgumentExpression);
         }
         else if (context.thisParameter() is { } thisParameter)
         {

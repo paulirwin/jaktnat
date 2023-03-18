@@ -110,6 +110,8 @@
         <None Remove="samples\functions\call.jakt" />
         <EmbeddedResource Include="samples\functions\call.jakt" />
         <None Remove="samples\functions\default_arguments_bad_type.jakt" />
+        <None Remove="samples\functions\default_arguments.jakt" />
+        <EmbeddedResource Include="samples\functions\default_arguments.jakt" />
     </ItemGroup>
 
     <ItemGroup>
