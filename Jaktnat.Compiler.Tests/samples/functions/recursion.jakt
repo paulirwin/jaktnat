@@ -3,14 +3,14 @@
 
 // Jaktnat change: moved recurse method before usage in main as we need to 
 // break out declarations into a separate compiler pass
-function recurse(count: i64) {
+fn recurse(count: i64) {
     println("{}", count)
     if count > 0 {
         recurse(count: count - 1)
     }
 }
 
-function main() {
+fn main() {
     recurse(count: 10)
 }
 

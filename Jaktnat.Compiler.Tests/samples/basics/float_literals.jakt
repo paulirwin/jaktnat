@@ -3,7 +3,7 @@
 
 // HACK.JACKNAT: original expectation was 3.141592 and 1.618033, but this is a truncation. .NET rounds the values.
 
-function main() {
+fn main() {
     println("{}", 0.0)
     println("{}", 3.14159265358979)
     println("{}", 1.61803399)

@@ -230,7 +230,7 @@ THROW: 'throw';
 LET: 'let';
 PUBLIC: 'public';
 PRIVATE: 'private';
-FUNCTION: 'function';
+FUNCTION: 'fn';
 CLASS: 'class';
 THIS: 'this';
 WHILE: 'while';

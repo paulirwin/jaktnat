@@ -1,7 +1,7 @@
 /// Expect:
 /// - output: "PASS\n"
 
-function foo() {
+fn foo() {
     if true {
         println("PASS")
         return
@@ -9,7 +9,7 @@ function foo() {
     println("FAIL")
 }
 
-function main() {
+fn main() {
     foo()
     
 }

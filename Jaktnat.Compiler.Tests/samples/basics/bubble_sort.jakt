@@ -3,7 +3,7 @@
 
 // HACK: for now, replaced .size() on arrays with .Length
 
-function bubble_sort(values: mutable [i64]) {
+fn bubble_sort(values: mutable [i64]) {
     let mutable i = 0
     while i < values.Length as! i64 - 1 {
         let mutable j = 0
@@ -19,7 +19,7 @@ function bubble_sort(values: mutable [i64]) {
     }
 }
 
-function main() {
+fn main() {
     // Jaktnat change, was: let mutable v = [25, 13, 8, 1, 9, 22, 50, 2]
     // Changed because literals are i32 currently and not implicitly convertible to i64 or vice versa
     // Originally considered having literals be i64, but then you have the problem the other way...

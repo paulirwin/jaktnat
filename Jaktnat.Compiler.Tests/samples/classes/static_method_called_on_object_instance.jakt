@@ -5,12 +5,12 @@
 //               validate against possible static methods to throw a more precise error
 
 class Foo {
-    public function bar() {
+    public fn bar() {
         println("I am a static method")
     }
 }
 
-function main() {
+fn main() {
     let foo = Foo()
     foo.bar()
 }
