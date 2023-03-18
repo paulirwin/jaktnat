@@ -4,6 +4,7 @@ public static class BuiltInTypeResolver
 {
     private static readonly IDictionary<string, Type> _builtInTypes = new Dictionary<string, Type>()
     {
+        ["void"] = typeof(void),
         ["bool"] = typeof(bool),
         ["f32"] = typeof(float),
         ["f64"] = typeof(double),

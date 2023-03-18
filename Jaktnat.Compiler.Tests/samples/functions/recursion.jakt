@@ -1,0 +1,17 @@
+/// Expect:
+/// - output: "10\n9\n8\n7\n6\n5\n4\n3\n2\n1\n0\n"
+
+// Jaktnat change: moved recurse method before usage in main as we need to 
+// break out declarations into a separate compiler pass
+function recurse(count: i64) {
+    println("{}", count)
+    if count > 0 {
+        recurse(count: count - 1)
+    }
+}
+
+function main() {
+    recurse(count: 10)
+}
+
+

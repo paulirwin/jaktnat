@@ -9,6 +9,8 @@ public abstract class TypeReference : IEquatable<Type>, IEquatable<TypeDeclarati
     public abstract bool IsValueType { get; }
     
     public abstract bool IsArray { get; }
+    
+    public abstract bool IsVoid { get; }
 
     public abstract TypeReference? GetElementType();
 

@@ -72,6 +72,7 @@
         <EmbeddedResource Include="samples\control_flow\while2.jakt" />
         <EmbeddedResource Include="samples\control_flow\while3.jakt" />
         <EmbeddedResource Include="samples\control_flow\while_with_bad_expression_type.jakt" />
+        <EmbeddedResource Include="samples\functions\recursion.jakt" />
     </ItemGroup>
 
     <ItemGroup>

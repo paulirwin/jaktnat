@@ -17,6 +17,8 @@ public class RuntimeTypeReference : TypeReference
     
     public override bool IsArray => RuntimeType.IsArray;
 
+    public override bool IsVoid => RuntimeType == typeof(void);
+
     public override TypeReference? GetElementType() => RuntimeType.GetElementType() is Type type ? new RuntimeTypeReference(type) : null;
     
     public override string ToString() => RuntimeType.ToString();

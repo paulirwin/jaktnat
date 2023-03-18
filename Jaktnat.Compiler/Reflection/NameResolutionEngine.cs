@@ -502,15 +502,40 @@ internal class NameResolutionEngine :
         return paramIndex >= 0 && argIndex >= 0 && paramIndex >= argIndex;
     }
 
-    public void Visit(CompilationContext context, FunctionSyntax node)
+    public void PreVisit(CompilationContext context, FunctionSyntax node)
     {
-        node.ReturnType = node.ReturnTypeIdentifier != null 
-            ? node.ReturnTypeIdentifier.Type 
-            : node.Body is ExpressionBlockSyntax { Children: [ ExpressionSyntax fatArrowExpression ] }
-            ? fatArrowExpression.ExpressionType
-            : typeof(void);
+        if (node.ReturnTypeIdentifier != null)
+        {
+            VisitTypeSyntax(context, node.ReturnTypeIdentifier);
+            node.ReturnType = node.ReturnTypeIdentifier.Type;
+        }
+        else
+            node.ReturnType = typeof(void);
 
         context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFunction(null, node));
+    }
+
+    private void VisitTypeSyntax(CompilationContext context, TypeIdentifierSyntax node)
+    {
+        switch (node)
+        {
+            case NamedTypeIdentifierSyntax namedTypeIdentifierSyntax:
+                Visit(context, namedTypeIdentifierSyntax);
+                break;
+            case ArrayTypeIdentifierSyntax arrayTypeIdentifierSyntax:
+                VisitTypeSyntax(context, arrayTypeIdentifierSyntax.ElementType);
+                Visit(context, arrayTypeIdentifierSyntax);
+                break;
+            default:
+                throw new CompilerError($"Unsure how to name resolve a {node.GetType().Name}");
+        }
+    }
+
+    public void Visit(CompilationContext context, FunctionSyntax node)
+    {
+        node.ReturnType = node.Body is ExpressionBlockSyntax { Children: [ ExpressionSyntax fatArrowExpression ] }
+            ? fatArrowExpression.ExpressionType
+            : node.ReturnType ?? typeof(void);
     }
 
     public void Visit(CompilationContext context, ArrayTypeIdentifierSyntax node)

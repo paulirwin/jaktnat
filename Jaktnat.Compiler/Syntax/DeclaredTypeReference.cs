@@ -17,6 +17,8 @@ public class DeclaredTypeReference : TypeReference
 
     public override bool IsArray => false; // TODO: support arrays
 
+    public override bool IsVoid => false;
+
     public override TypeReference? GetElementType()
     {
         return null; // TODO: support arrays
