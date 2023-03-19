@@ -25,7 +25,7 @@ internal static class FreeFunctionResolver
                 foreach (var method in methods)
                 {
                     var name = method.Attribute!.Name;
-                    var newFunction = new RuntimeMethodInfoFunction(method.Method);
+                    var newFunction = new RuntimeMethodBaseFunction(method.Method);
 
                     context.CompilationUnit.DeclareFreeFunction(name, newFunction);
                 }

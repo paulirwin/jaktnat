@@ -2,18 +2,18 @@
 
 namespace Jaktnat.Compiler.Syntax;
 
-public class FunctionSyntax : SyntaxNode
+public class FunctionSyntax : FunctionLikeSyntax
 {
     public FunctionSyntax(VisibilityModifier visibilityModifier,
         string name, 
-        ParameterListSyntax? parameters, 
+        ParameterListSyntax parameters, 
         SyntaxNode body, 
         bool throws, 
         TypeIdentifierSyntax? returnTypeIdentifier)
+        : base(parameters)
     {
         VisibilityModifier = visibilityModifier;
         Name = name;
-        Parameters = parameters;
         Throws = throws;
         ReturnTypeIdentifier = returnTypeIdentifier;
 
@@ -36,8 +36,6 @@ public class FunctionSyntax : SyntaxNode
     
     public string Name { get; }
 
-    public ParameterListSyntax? Parameters { get; }
-
     public bool Throws { get; }
 
     public TypeIdentifierSyntax? ReturnTypeIdentifier { get; }
@@ -46,8 +44,7 @@ public class FunctionSyntax : SyntaxNode
 
     public TypeReference? ReturnType { get; set; }
 
-    public bool HasThisParameter => Parameters != null
-                                    && Parameters.Parameters.Count > 0
+    public bool HasThisParameter => Parameters.Parameters.Count > 0
                                     && Parameters.Parameters[0] is ThisParameterSyntax;
 
     public override string ToString()

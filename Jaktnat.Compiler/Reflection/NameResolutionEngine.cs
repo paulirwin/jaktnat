@@ -190,7 +190,16 @@ internal class NameResolutionEngine :
         if (node.Target.ExpressionType is DeclaredTypeReference constructorTypeReference)
         {
             node.PossibleMatchedConstructors = constructorTypeReference.DeclaredType.Constructors
-                .Cast<ConstructorReferenceSyntax>()
+                .Select(i => new DeclaredFunction(constructorTypeReference.DeclaredType, i))
+                .Cast<Function>()
+                .ToList();
+        }
+        else if (node.Target.CompileTimeTarget is Type runtimeType)
+        {
+            node.PossibleMatchedConstructors = runtimeType
+                .GetConstructors()
+                .Select(i => new RuntimeMethodBaseFunction(i))
+                .Cast<Function>()
                 .ToList();
         }
         else
@@ -224,8 +233,8 @@ internal class NameResolutionEngine :
 
         if (call.PossibleMatchedMethods is { Count: > 0 })
         {
-            if ((ResolveMethodOverloads(call, argTypes, false, out var freeFunction) 
-                 || ResolveMethodOverloads(call, argTypes, true, out freeFunction)) 
+            if ((ResolveMethodOverloads(call.PossibleMatchedMethods, call, argTypes, false, out var freeFunction) 
+                 || ResolveMethodOverloads(call.PossibleMatchedMethods, call, argTypes, true, out freeFunction)) 
                 && freeFunction != null)
             {
                 call.MatchedMethod = freeFunction;
@@ -245,12 +254,12 @@ internal class NameResolutionEngine :
 
         if (call.PossibleMatchedConstructors is { Count: > 0 })
         {
-            if ((ResolveConstructorOverloads(call, argTypes, false, out var constructor) 
-                 || ResolveConstructorOverloads(call, argTypes, true, out constructor))
+            if ((ResolveMethodOverloads(call.PossibleMatchedConstructors, call, argTypes, false, out var constructor) 
+                 || ResolveMethodOverloads(call.PossibleMatchedConstructors, call, argTypes, true, out constructor))
                 && constructor != null)
             {
                 call.MatchedConstructor = constructor;
-                call.ExpressionType = constructor.DeclaringType;
+                call.ExpressionType = constructor.ReturnType;
                 return;
             }
 
@@ -275,92 +284,56 @@ internal class NameResolutionEngine :
                     new NamedTypeIdentifierSyntax(i.ArgumentType?.FullName ?? typeof(object).FullName!),
                     null)) // TODO.PI: is this null correct for default expression?
                 .ToList();
-
+        
             call.MatchedConstructor =
                 new LateBoundConstructorReference(call.Target.ExpressionType, new ParameterListSyntax(argsAsParams));
-
+        
             return;
         }
 
         throw new CompilerError($"Unable to resolve overload");
     }
 
-    private static bool ResolveConstructorOverloads(CallSyntax call, TypeReference?[] argTypes, bool allowImplicitLiteralConversion, out ConstructorReferenceSyntax? constructor)
+    private static bool ResolveMethodOverloads(IList<Function>? possibleMatches,
+        CallSyntax call,
+        TypeReference?[] argTypes,
+        bool allowImplicitLiteralConversion,
+        out Function? matchedFunction)
     {
-        if (call.PossibleMatchedConstructors == null)
+        if (possibleMatches == null)
         {
-            constructor = null;
+            matchedFunction = null;
             return false;
         }
 
         // TODO: support matching on parameter name?
         // TODO: support `params` parameters
         // TODO: support overload precedence, i.e. for a String argument, prefer (String s) over (Object o)
-        foreach (var possibility in call.PossibleMatchedConstructors)
+        foreach (var possibility in possibleMatches)
         {
-            if (possibility.Parameters.Parameters.Count == 0
-                && call.Arguments.Count == 0)
-            {
-                constructor = possibility;
-                return true;
-            }
-            else if (call.Arguments.Count > 0)
-            {
-                var parameterTypes = possibility.Parameters.Parameters
-                    .Select(i => i.Type).ToArray();
-
-                if (parameterTypes.Length == call.Arguments.Count
-                    && ParameterTypesAreCompatible(parameterTypes, argTypes, allowImplicitLiteralConversion))
-                {
-                    constructor = possibility;
-
-                    return true;
-                }
-            }
-            
-        }
-
-        constructor = null;
-        return false;
-    }
-
-    private static bool ResolveMethodOverloads(CallSyntax call, TypeReference?[] argTypes, bool allowImplicitLiteralConversion, out Function? freeFunction)
-    {
-        if (call.PossibleMatchedMethods == null)
-        {
-            freeFunction = null;
-            return false;
-        }
-
-        // TODO: support matching on parameter name?
-        // TODO: support `params` parameters
-        // TODO: support overload precedence, i.e. for a String argument, prefer (String s) over (Object o)
-        foreach (var possibility in call.PossibleMatchedMethods)
-        {
-            if (possibility is RuntimeMethodInfoFunction runtimeFunction)
+            if (possibility is RuntimeMethodBaseFunction runtimeFunction)
             {
                 var parameterTypes = runtimeFunction.Method.GetParameters().Select(i => new RuntimeTypeReference(i.ParameterType)).ToArray();
 
                 if (parameterTypes.Length == call.Arguments.Count
                     && ParameterTypesAreCompatible(parameterTypes, argTypes, allowImplicitLiteralConversion))
                 {
-                    freeFunction = possibility;
+                    matchedFunction = possibility;
                     return true;
                 }
             }
             else if (possibility is DeclaredFunction declaredFunction)
             {
-                if ((declaredFunction.FunctionSyntax.Parameters == null 
-                     || declaredFunction.FunctionSyntax.Parameters.Parameters.Count == 0
-                     || (declaredFunction.FunctionSyntax.Parameters.Parameters.Count == 1
-                     && declaredFunction.FunctionSyntax.Parameters.Parameters[0] is ThisParameterSyntax))
+                if ((declaredFunction.Function.Parameters == null 
+                     || declaredFunction.Function.Parameters.Parameters.Count == 0
+                     || declaredFunction.Function.Parameters.Parameters is [ThisParameterSyntax])
                     && call.Arguments.Count == 0)
                 {
-                    freeFunction = possibility;
+                    matchedFunction = possibility;
                     return true;
                 }
                 
-                if (declaredFunction.FunctionSyntax.Parameters is { } parameters)
+                if (declaredFunction.Function.Parameters is { } parameters)
                 {
                     int paramOrdinal = 0;
                     bool usingOrdinalArgs = true;
@@ -398,14 +371,14 @@ internal class NameResolutionEngine :
                     if (parameterTypes.Length == virtualArgTypes.Count
                         && ParameterTypesAreCompatible(parameterTypes, virtualArgTypes, allowImplicitLiteralConversion))
                     {
-                        freeFunction = possibility;
+                        matchedFunction = possibility;
                         return true;
                     }
                 }
             }
         }
 
-        freeFunction = null;
+        matchedFunction = null;
         return false;
     }
 
@@ -729,7 +702,7 @@ internal class NameResolutionEngine :
                 else if (members[0] is MethodInfo method)
                 {
                     node.ExpressionType = typeof(MethodInfo);
-                    node.CompileTimeTarget = new RuntimeMethodInfoFunction(method);
+                    node.CompileTimeTarget = new RuntimeMethodBaseFunction(method);
                 }
                 else
                 {
@@ -746,7 +719,7 @@ internal class NameResolutionEngine :
 
                 node.ExpressionType = typeof(MethodInfo);
                 node.CompileTimeTarget = new FunctionOverloadSet(
-                    members.Select(i => new RuntimeMethodInfoFunction((MethodInfo)i))
+                    members.Select(i => new RuntimeMethodBaseFunction((MethodInfo)i))
                 );
             }
         }
@@ -837,7 +810,7 @@ internal class NameResolutionEngine :
                 else if (members[0] is MethodInfo method)
                 {
                     node.ExpressionType = typeof(MethodInfo);
-                    node.CompileTimeTarget = new RuntimeMethodInfoFunction(method);
+                    node.CompileTimeTarget = new RuntimeMethodBaseFunction(method);
                 }
                 else
                 {
@@ -854,7 +827,7 @@ internal class NameResolutionEngine :
 
                 node.ExpressionType = typeof(MethodInfo);
                 node.CompileTimeTarget = new FunctionOverloadSet(
-                    members.Select(i => new RuntimeMethodInfoFunction((MethodInfo)i))
+                    members.Select(i => new RuntimeMethodBaseFunction((MethodInfo)i))
                 );
             }
         }

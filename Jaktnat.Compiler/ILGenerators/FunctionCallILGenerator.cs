@@ -18,7 +18,7 @@ internal static class FunctionCallILGenerator
         MethodReference methodRef;
         var paramTypes = new List<Type>();
 
-        if (callSyntax.MatchedMethod is RuntimeMethodInfoFunction { Method: MethodInfo method })
+        if (callSyntax.MatchedMethod is RuntimeMethodBaseFunction { Method: MethodInfo method })
         {
             methodRef = il.Body.Method.DeclaringType.Module.ImportReference(method);
 
@@ -36,13 +36,13 @@ internal static class FunctionCallILGenerator
         }
         else if (callSyntax.MatchedMethod is DeclaredFunction declaredFreeFunction)
         {
-            var programMethod = context.ProgramClass.Methods.FirstOrDefault(i => i.Name == declaredFreeFunction.FunctionSyntax.Name);
+            var programMethod = context.ProgramClass.Methods.FirstOrDefault(i => i.Name == declaredFreeFunction.Name);
 
             methodRef = programMethod ?? throw new CompilerError($"Unable to resolve function \"{callSyntax.Target}\"");
 
-            if (declaredFreeFunction.FunctionSyntax.Parameters != null)
+            if (declaredFreeFunction.Function.Parameters != null)
             {
-                foreach (var parameter in declaredFreeFunction.FunctionSyntax.Parameters.Parameters)
+                foreach (var parameter in declaredFreeFunction.Function.Parameters.Parameters)
                 {
                     // TODO: support declared types
                     if (parameter.Type is not RuntimeTypeReference { RuntimeType: Type runtimeType })

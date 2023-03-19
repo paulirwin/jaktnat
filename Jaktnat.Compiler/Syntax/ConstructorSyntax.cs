@@ -1,9 +1,14 @@
 ﻿namespace Jaktnat.Compiler.Syntax;
 
-public class ConstructorSyntax : ConstructorReferenceSyntax
+public class ConstructorSyntax : FunctionLikeSyntax
 {
-    public ConstructorSyntax(TypeDeclarationSyntax declaringType, ParameterListSyntax parameters)
-        : base(new DeclaredTypeReference(declaringType), parameters)
+    public ConstructorSyntax(TypeReference declaringType, ParameterListSyntax parameters)
+        : base(parameters)
     {
+        DeclaringType = declaringType;
     }
+    
+    public TypeReference DeclaringType { get; }
+
+    public override string ToString() => $".ctor({Parameters})";
 }

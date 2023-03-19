@@ -18,9 +18,9 @@ public class CallSyntax : ExpressionSyntax
 
     internal Function? MatchedMethod { get; set; }
     
-    internal IList<ConstructorReferenceSyntax>? PossibleMatchedConstructors { get; set; }
+    internal IList<Function>? PossibleMatchedConstructors { get; set; }
 
-    internal ConstructorReferenceSyntax? MatchedConstructor { get; set; }
+    internal Function? MatchedConstructor { get; set; }
 
     public override bool Mutates => MatchedMethod is { Mutates: true };
 

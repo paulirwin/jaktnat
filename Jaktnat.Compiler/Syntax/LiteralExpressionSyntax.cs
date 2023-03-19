@@ -22,7 +22,7 @@ public class LiteralExpressionSyntax : ExpressionSyntax
     public override string ToString() => Value switch
     {
         string s => SymbolDisplay.FormatLiteral(s, true),
-        char c => SymbolDisplay.FormatLiteral(c, true),
+        char c => $"c{SymbolDisplay.FormatLiteral(c, true)}",
         _ => Value.ToString() ?? "",
     };
 

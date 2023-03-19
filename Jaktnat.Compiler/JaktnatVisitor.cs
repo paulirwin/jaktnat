@@ -50,10 +50,9 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Incomplete function", context.Start);
         }
 
-        var parameters = context.parameterList();
-        ParameterListSyntax? parameterList = null;
+        ParameterListSyntax? parameterList;
 
-        if (parameters != null)
+        if (context.parameterList() is { } parameters)
         {
             parameterList = Visit(parameters) as ParameterListSyntax;
 
@@ -61,6 +60,10 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             {
                 throw new ParserError($"Unable to parse parameters for function {name}", context.start);
             }
+        }
+        else
+        {
+            parameterList = new ParameterListSyntax();
         }
 
         bool throws = context.THROWS() != null;
@@ -93,7 +96,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new FunctionSyntax(modifier, name, parameterList, body, throws, returnType);
     }
 
-    public override SyntaxNode? VisitClassDeclaration(JaktnatParser.ClassDeclarationContext context)
+    public override SyntaxNode VisitClassDeclaration(JaktnatParser.ClassDeclarationContext context)
     {
         var name = context.NAME().GetText();
 
@@ -257,6 +260,11 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return block;
     }
 
+    public override SyntaxNode? VisitExpressionStatement(JaktnatParser.ExpressionStatementContext context)
+    {
+        return VisitExpression(context.expression());
+    }
+
     public override SyntaxNode? VisitCallArgument(JaktnatParser.CallArgumentContext context)
     {
         string? name = null;
@@ -276,30 +284,33 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
     public override SyntaxNode? VisitLiteral(JaktnatParser.LiteralContext context)
     {
-        var str = context.STRING();
-
-        if (str != null)
+        if (context.STRING() is { } str)
         {
             return new LiteralExpressionSyntax(str.GetText()[1..^1]);
         }
 
-        var number = context.number();
+        if (context.CHARACTER() is { } chr)
+        {
+            var character = chr.GetText()[2..^1].Replace("\\'", "'");
+            if (character.Length is 0 or > 1)
+            {
+                throw new ParserError("Too few or too many characters in character literal", context.start);
+            }
 
-        if (number != null)
+            return new LiteralExpressionSyntax(character[0]);
+        }
+
+        if (context.number() is { } number)
         {
             return VisitNumber(number);
         }
 
-        var t = context.TRUE();
-
-        if (t != null)
+        if (context.TRUE() is not null)
         {
             return new LiteralExpressionSyntax(true);
         }
 
-        var f = context.FALSE();
-
-        if (f != null)
+        if (context.FALSE() is not null)
         {
             return new LiteralExpressionSyntax(false);
         }
@@ -610,7 +621,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return base.VisitExpression(context);
     }
 
-    public override SyntaxNode? VisitThisExpression(JaktnatParser.ThisExpressionContext context)
+    public override SyntaxNode VisitThisExpression(JaktnatParser.ThisExpressionContext context)
     {
         return new ThisExpressionSyntax();
     }

@@ -127,7 +127,7 @@ scopeAccess: identifier DOUBLECOLON identifier;
 
 indexerAccess: LBRACKET expression RBRACKET;
 
-literal: number | STRING | TRUE | FALSE;
+literal: number | STRING | CHARACTER | TRUE | FALSE;
 
 array: LBRACKET expressionList RBRACKET;
 
@@ -262,6 +262,7 @@ fragment LOWER: 'a'..'z';
 fragment UPPER: 'A'..'Z';
 fragment UNDERSCORE: '_';
 
+CHARACTER: 'c\'' ( ~'\'' | '\\' '\'') '\'';
 STRING: '"' ( ~'"' | '\\' '"' )* '"';
 
 DOUBLECOLON: '::';

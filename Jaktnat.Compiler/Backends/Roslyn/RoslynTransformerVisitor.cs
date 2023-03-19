@@ -9,7 +9,6 @@ using BlockSyntax = Jaktnat.Compiler.Syntax.BlockSyntax;
 using ClassDeclarationSyntax = Jaktnat.Compiler.Syntax.ClassDeclarationSyntax;
 using CompilationUnitSyntax = Jaktnat.Compiler.Syntax.CompilationUnitSyntax;
 using SyntaxNode = Jaktnat.Compiler.Syntax.SyntaxNode;
-using RuntimeMethodInfoFunction = Jaktnat.Compiler.ObjectModel.RuntimeMethodInfoFunction;
 using LiteralExpressionSyntax = Jaktnat.Compiler.Syntax.LiteralExpressionSyntax;
 using VariableDeclarationSyntax = Jaktnat.Compiler.Syntax.VariableDeclarationSyntax;
 using ParameterSyntax = Jaktnat.Compiler.Syntax.ParameterSyntax;
@@ -654,8 +653,8 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                         SyntaxFactory.MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             targetExpr,
-                            SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name)),
-                    RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } =>
+                            SyntaxFactory.IdentifierName(declared.Name)),
+                    RuntimeMethodBaseFunction { Method: { DeclaringType: { } type } method } =>
                         SyntaxFactory.MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             targetExpr,
@@ -669,13 +668,13 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                 target = call.MatchedMethod switch
                 {
                     DeclaredFunction { DeclaringType: null } declared =>
-                        SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name),
+                        SyntaxFactory.IdentifierName(declared.Name),
                     DeclaredFunction { DeclaringType: { } declaringType } declared =>
                         SyntaxFactory.MemberAccessExpression(
                             SyntaxKind.SimpleMemberAccessExpression,
                             SyntaxFactory.IdentifierName(declaringType.Name),
-                            SyntaxFactory.IdentifierName(declared.FunctionSyntax.Name)),
-                    RuntimeMethodInfoFunction { Method: { DeclaringType: { } type } method } =>
+                            SyntaxFactory.IdentifierName(declared.Name)),
+                    RuntimeMethodBaseFunction { Method: { DeclaringType: { } type } method } =>
                         SyntaxFactory.ParseName($"{type.FullName}.{method.Name}"),
                     _ => throw new NotImplementedException("Unexpected function type")
                 };
@@ -688,7 +687,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         if (call.MatchedConstructor != null)
         {
             return SyntaxFactory
-                .ObjectCreationExpression(SyntaxFactory.IdentifierName(call.MatchedConstructor.DeclaringType.Name))
+                .ObjectCreationExpression(SyntaxFactory.IdentifierName(call.MatchedConstructor.ReturnType.Name))
                 .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
         }
 
@@ -697,7 +696,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
     private static void ValidateCallArgumentNames(DeclaredFunction declaredFunction, IList<CallArgumentSyntax> callArguments)
     {
-        if (declaredFunction.FunctionSyntax.Parameters is not { Parameters: { } parameters })
+        if (declaredFunction.Function.Parameters is not { Parameters: { } parameters })
         {
             return;
         }

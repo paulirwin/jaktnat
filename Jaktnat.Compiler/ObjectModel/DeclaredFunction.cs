@@ -4,22 +4,34 @@ namespace Jaktnat.Compiler.ObjectModel;
 
 internal class DeclaredFunction : Function
 {
-    public DeclaredFunction(TypeDeclarationSyntax? declaringType, FunctionSyntax functionSyntax)
+    public DeclaredFunction(TypeDeclarationSyntax? declaringType, FunctionLikeSyntax function)
     {
         DeclaringType = declaringType;
-        FunctionSyntax = functionSyntax;
+        Function = function;
     }
 
     public TypeDeclarationSyntax? DeclaringType { get; }
 
-    public FunctionSyntax FunctionSyntax { get; }
+    public FunctionLikeSyntax Function { get; }
 
-    public override TypeReference ReturnType => FunctionSyntax.ReturnType ?? throw new InvalidOperationException("Function type resolution has not yet happened");
+    public override TypeReference ReturnType => Function switch
+    {
+        FunctionSyntax func => func.ReturnType ??
+                               throw new InvalidOperationException("Function type resolution has not yet happened"),
+        ConstructorSyntax ctor => ctor.DeclaringType,
+        _ => throw new InvalidOperationException("Unexpected function type")
+    };
+
+    public string Name => Function switch
+    {
+        FunctionSyntax func => func.Name,
+        ConstructorSyntax ctor => ".ctor",
+        _ => throw new InvalidOperationException("Unexpected function type")
+    };
 
     public override bool Mutates => DeclaringType != null
-                                    && FunctionSyntax.Parameters != null
-                                    && FunctionSyntax.Parameters.Parameters.Count > 0
-                                    && FunctionSyntax.Parameters.Parameters[0] is ThisParameterSyntax { Mutable: true };
+                                    && Function.Parameters.Parameters.Count > 0
+                                    && Function.Parameters.Parameters[0] is ThisParameterSyntax { Mutable: true };
 
-    public override string ToString() => FunctionSyntax.ToString();
+    public override string ToString() => Function.ToString();
 }

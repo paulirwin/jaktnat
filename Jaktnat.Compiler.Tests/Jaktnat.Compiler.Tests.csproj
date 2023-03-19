@@ -75,6 +75,7 @@
         <EmbeddedResource Include="samples\functions\recursion.jakt" />
         <EmbeddedResource Include="samples\strings\length_and_is_empty.jakt" />
         <EmbeddedResource Include="samples\strings\contains.jakt" />
+        <EmbeddedResource Include="samples\strings\repeated.jakt" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,0 +1,8 @@
+/// Expect:
+/// - output: "xxxxHello\n"
+
+fn main() {
+    // Jaktnat change: use String constructor and remove named parameters
+    let exes = String(c'x', 4)
+    println("{}Hello", exes);
+}
