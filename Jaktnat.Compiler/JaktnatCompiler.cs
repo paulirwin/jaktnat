@@ -44,14 +44,20 @@ public static class JaktnatCompiler
 
         // Phase 2: scope resolution
         ScopeResolutionEngine.ResolveScopes(compilationUnit, null);
+        
+        // Phase 3: forward declarations
+        SyntaxVisitor.Visit<ForwardDeclarationEngine>(context, compilationUnit);
+        
+        // Phase 4: type resolution
+        SyntaxVisitor.Visit<TypeResolutionEngine>(context, compilationUnit);
 
-        // Phase 3: name, type, and overload resolution
+        // Phase 5: name and overload resolution
         SyntaxVisitor.Visit<NameResolutionEngine>(context, compilationUnit);
 
-        // Phase 4: immutability/mutability validation
+        // Phase 6: immutability/mutability validation
         SyntaxVisitor.Visit<ImmutabilityValidator>(context, compilationUnit);
 
-        // Phase 5: assembly generation
+        // Phase 7: assembly generation
         backend = GetCompilerBackend(options.Backend);
         
         return compilationUnit;

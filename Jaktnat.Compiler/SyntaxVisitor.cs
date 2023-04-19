@@ -33,11 +33,7 @@ internal static class SyntaxVisitor
                 VisitInternal(obj, context, function.ReturnTypeIdentifier);
             }
 
-            if (function.Parameters != null)
-            {
-                VisitInternal(obj, context, function.Parameters);
-            }
-
+            VisitInternal(obj, context, function.Parameters);
             VisitInternal(obj, context, function.Body);
         }
         else if (node is ExpressionBlockSyntax expressionBlock)

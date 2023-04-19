@@ -11,8 +11,6 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<IdentifierExpressionSyntax>,
     ISyntaxVisitor<CallSyntax>,
     ISyntaxVisitor<FunctionSyntax>,
-    ISyntaxVisitor<ArrayTypeIdentifierSyntax>,
-    ISyntaxVisitor<NamedTypeIdentifierSyntax>,
     ISyntaxVisitor<ParameterSyntax>,
     ISyntaxVisitor<ArraySyntax>,
     ISyntaxVisitor<WhileSyntax>,
@@ -27,13 +25,10 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<ParenthesizedExpressionSyntax>,
     ISyntaxVisitor<ScopeAccessSyntax>,
     ISyntaxVisitor<BlockScopedIdentifierSyntax>,
-    ISyntaxVisitor<MemberFunctionDeclarationSyntax>,
     ISyntaxVisitor<ThisExpressionSyntax>,
     ISyntaxVisitor<DeferSyntax>,
-    ISyntaxVisitor<UnsafeBlockSyntax>,
     ISyntaxVisitor<CSharpBlockSyntax>,
-    ISyntaxVisitor<ForInSyntax>,
-    ISyntaxVisitor<CatchSyntax>
+    ISyntaxVisitor<ForInSyntax>
 {
     private static readonly IReadOnlyList<Type> SignedWideningTypes = new[]
     {
@@ -475,35 +470,6 @@ internal class NameResolutionEngine :
         return paramIndex >= 0 && argIndex >= 0 && paramIndex >= argIndex;
     }
 
-    public void PreVisit(CompilationContext context, FunctionSyntax node)
-    {
-        if (node.ReturnTypeIdentifier != null)
-        {
-            VisitTypeSyntax(context, node.ReturnTypeIdentifier);
-            node.ReturnType = node.ReturnTypeIdentifier.Type;
-        }
-        else
-            node.ReturnType = typeof(void);
-
-        context.CompilationUnit.DeclareFreeFunction(node.Name, new DeclaredFunction(null, node));
-    }
-
-    private void VisitTypeSyntax(CompilationContext context, TypeIdentifierSyntax node)
-    {
-        switch (node)
-        {
-            case NamedTypeIdentifierSyntax namedTypeIdentifierSyntax:
-                Visit(context, namedTypeIdentifierSyntax);
-                break;
-            case ArrayTypeIdentifierSyntax arrayTypeIdentifierSyntax:
-                VisitTypeSyntax(context, arrayTypeIdentifierSyntax.ElementType);
-                Visit(context, arrayTypeIdentifierSyntax);
-                break;
-            default:
-                throw new CompilerError($"Unsure how to name resolve a {node.GetType().Name}");
-        }
-    }
-
     public void Visit(CompilationContext context, FunctionSyntax node)
     {
         node.ReturnType = node.Body is ExpressionBlockSyntax { Children: [ ExpressionSyntax fatArrowExpression ] }
@@ -511,58 +477,13 @@ internal class NameResolutionEngine :
             : node.ReturnType ?? typeof(void);
     }
 
-    public void Visit(CompilationContext context, ArrayTypeIdentifierSyntax node)
-    {
-        if (node.ElementType.Type == null)
-        {
-            throw new CompilerError("Element type is not defined for array type");
-        }
-
-        node.Type = node.ElementType.Type.MakeArrayType();
-    }
-
-    public void Visit(CompilationContext context, NamedTypeIdentifierSyntax node)
-    {
-        if (context.CompilationUnit.TryResolveType(node.Name, out var typeDecl) && typeDecl != null)
-        {
-            node.Type = typeDecl;
-        }
-        else if (BuiltInTypeResolver.TryResolveType(node.Name) is Type type)
-        {
-            node.Type = type;
-        }
-        else
-        {
-            throw new CompilerError($"Unable to resolve named type: {node.Name}");
-        }
-    }
-
     public void Visit(CompilationContext context, ParameterSyntax node)
     {
-        if (node.ParentBlock == null)
+        if (node.Type == null)
         {
-            throw new CompilerError("Expected parameter to have a block");
+            throw new CompilerError("Parameter does not have a resolved type");
         }
-
-        if (node is ThisParameterSyntax thisParameter)
-        {
-            if (thisParameter.DeclaringType == null)
-            {
-                throw new CompilerError("`this` did not resolve to anything");
-            }
-
-            node.Type = thisParameter.DeclaringType;
-            return;
-        }
-
-        if (node.TypeIdentifier?.Type == null)
-        {
-            throw new CompilerError("Expected type identifier in parameter declaration");
-        }
-
-        node.ParentBlock.Declarations.Add(node.Name, node);
-        node.Type = node.TypeIdentifier.Type;
-
+        
         if (node.DefaultArgument != null)
         {
             if (node.DefaultArgument.ExpressionType == null)
@@ -760,16 +681,6 @@ internal class NameResolutionEngine :
         node.Type = node.TypeIdentifier.Type;
     }
 
-    public void PreVisit(CompilationContext context, ClassDeclarationSyntax node)
-    {
-        context.CompilationUnit.DeclareType(node.Name, node);
-
-        foreach (var member in node.Members)
-        {
-            member.DeclaringType = node;
-        }
-    }
-
     public void Visit(CompilationContext context, ClassDeclarationSyntax node)
     {
         var parameters = node.Members.OfType<PropertySyntax>()
@@ -857,28 +768,6 @@ internal class NameResolutionEngine :
         node.ParentBlock.Declarations.Add(node.Name, node);
     }
 
-    public void Visit(CompilationContext context, MemberFunctionDeclarationSyntax node)
-    {
-    }
-
-    public void PreVisit(CompilationContext context, MemberFunctionDeclarationSyntax node)
-    {
-        node.Function.Body.DeclaringType = node.DeclaringType; // for `this` expression
-        
-        if (node.Function.Parameters == null)
-        {
-            return;
-        }
-        
-        foreach (var parameter in node.Function.Parameters.Parameters)
-        {
-            if (parameter is ThisParameterSyntax thisParameter)
-            {
-                thisParameter.DeclaringType = node.DeclaringType;
-            }
-        }
-    }
-
     public void Visit(CompilationContext context, ThisExpressionSyntax node)
     {
         if (node.ParentBlock == null)
@@ -902,21 +791,6 @@ internal class NameResolutionEngine :
         }
         
         node.ParentBlock.Defers.Add(node);
-    }
-
-    public void Visit(CompilationContext context, UnsafeBlockSyntax node)
-    {
-    }
-
-    public void PreVisit(CompilationContext context, UnsafeBlockSyntax node)
-    {
-        foreach (var child in node.Block.Children)
-        {
-            if (child is CSharpBlockSyntax csharpBlock)
-            {
-                csharpBlock.ParentUnsafeBlock = node;
-            }
-        }
     }
 
     public void Visit(CompilationContext context, CSharpBlockSyntax node)
@@ -968,18 +842,5 @@ internal class NameResolutionEngine :
                 }
             }
         }
-    }
-
-    public void PreVisit(CompilationContext context, ForInSyntax node)
-    {
-    }
-
-    public void Visit(CompilationContext context, CatchSyntax node)
-    {
-    }
-
-    public void PreVisit(CompilationContext context, CatchSyntax node)
-    {
-        node.Identifier.Type = typeof(Exception);
     }
 }

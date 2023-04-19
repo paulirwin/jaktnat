@@ -31,7 +31,6 @@ internal static class ScopeResolutionEngine
                 }
 
                 break;
-
             case ElseSyntax elseSyntax:
                 ResolveScopes(elseSyntax.Child, parentBlock);
                 break;
@@ -46,10 +45,7 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(functionSyntax.Body, parentBlock);
 
                 // special case: use body block as "parent" block for function params
-                if (functionSyntax.Parameters != null)
-                {
-                    ResolveScopes(functionSyntax.Parameters, functionSyntax.Body);
-                }
+                ResolveScopes(functionSyntax.Parameters, functionSyntax.Body);
 
                 break;
             case CallArgumentSyntax callArgumentSyntax:
@@ -153,6 +149,15 @@ internal static class ScopeResolutionEngine
                 break;
             case UnsafeBlockSyntax unsafeBlock:
                 ResolveScopes(unsafeBlock.Block, parentBlock);
+                
+                foreach (var child in unsafeBlock.Block.Children)
+                {
+                    if (child is CSharpBlockSyntax csharpBlock)
+                    {
+                        csharpBlock.ParentUnsafeBlock = unsafeBlock;
+                    }
+                }
+                
                 break;
             case ForInSyntax forInSyntax:
                 ResolveScopes(forInSyntax.Identifier, forInSyntax.Block);
