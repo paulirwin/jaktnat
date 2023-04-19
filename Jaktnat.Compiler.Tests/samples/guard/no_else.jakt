@@ -1,0 +1,8 @@
+/// Expect:
+/// - error: "Expected `else` keyword"
+
+fn a() {
+    guard true
+}
+
+fn main() {}

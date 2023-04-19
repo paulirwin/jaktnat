@@ -8,6 +8,8 @@ public class BlockSyntax : AggregateSyntax
 
     public IList<DeferSyntax> Defers { get; } = new List<DeferSyntax>();
     
+    public bool PotentiallyExitsScope { get; set; }
+    
     public bool TryResolveDeclaration(string name, out DeclarationSyntax declaration)
     {
         if (Declarations.TryGetValue(name, out declaration!))

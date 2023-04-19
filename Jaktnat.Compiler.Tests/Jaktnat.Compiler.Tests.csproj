@@ -76,6 +76,9 @@
         <EmbeddedResource Include="samples\strings\length_and_is_empty.jakt" />
         <EmbeddedResource Include="samples\strings\contains.jakt" />
         <EmbeddedResource Include="samples\strings\repeated.jakt" />
+        <EmbeddedResource Include="samples\guard\basic.jakt" />
+        <EmbeddedResource Include="samples\guard\no_else.jakt" />
+        <EmbeddedResource Include="samples\guard\no_scope_exit.jakt" />
     </ItemGroup>
 
     <ItemGroup>

@@ -40,6 +40,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             VariableDeclarationSyntax variableDeclaration => VisitVariableDeclaration(context, variableDeclaration),
             IdentifierExpressionSyntax identifier => VisitIdentifier(context, identifier),
             IfSyntax ifSyntax => VisitIf(context, ifSyntax),
+            GuardSyntax guardSyntax => VisitGuard(context, guardSyntax),
             ParameterSyntax parameter => VisitParameter(context, parameter),
             WhileSyntax whileSyntax => VisitWhile(context, whileSyntax),
             LoopSyntax loopSyntax => VisitLoop(context, loopSyntax),
@@ -539,6 +540,29 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         }
 
         return SyntaxFactory.IfStatement(condition, body).WithElse(elseClause);
+    }
+
+    private CSharpSyntaxNode VisitGuard(CompilationContext context, GuardSyntax guardSyntax)
+    {
+        if (Visit(context, guardSyntax.Condition) is not CSExpressionSyntax condition)
+        {
+            throw new CompilerError("Condition did not evaluate to an expression");
+        }
+        
+        // negate condition
+        condition = SyntaxFactory.PrefixUnaryExpression(
+            SyntaxKind.LogicalNotExpression,
+            SyntaxFactory.ParenthesizedExpression(condition)
+        );
+
+        if (Visit(context, guardSyntax.ElseNode.Child) is not StatementSyntax elseStatement)
+        {
+            throw new CompilerError("Else clause must be a statement");
+        }
+
+        // NOTE: this looks a little funny, but since we're inverting the condition to translare
+        // to a regular C# `if` statement, the body of the `if` statement becomes the `else` statement.
+        return SyntaxFactory.IfStatement(condition, elseStatement);
     }
 
     private CSharpSyntaxNode VisitIdentifier(CompilationContext context, IdentifierExpressionSyntax identifier)

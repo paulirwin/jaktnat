@@ -84,6 +84,11 @@ internal static class SyntaxVisitor
                 VisitInternal(obj, context, ifSyntax.ElseNode);
             }
         }
+        else if (node is GuardSyntax guardSyntax)
+        {
+            VisitInternal(obj, context, guardSyntax.Condition);
+            VisitInternal(obj, context, guardSyntax.ElseNode);
+        }
         else if (node is ElseSyntax elseSyntax)
         {
             VisitInternal(obj, context, elseSyntax.Child);

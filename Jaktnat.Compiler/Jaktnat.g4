@@ -47,7 +47,8 @@ statement:
     | deferStatement
     | unsafeBlock
     | csharpBlock
-    | forInStatement;
+    | forInStatement
+    | guardStatement;
     
 forInStatement: FOR identifier IN expression block;
     
@@ -60,6 +61,8 @@ deferStatement: DEFER (expression | block);
 expressionStatement: expression SEMICOLON?;
 
 ifStatement: IF expression block elseStatement?;
+
+guardStatement: GUARD expression elseStatement;
 
 tryStatement: TRY (expression | block) catchClause;
 
@@ -252,6 +255,7 @@ UNSAFE: 'unsafe';
 CSHARP: 'csharp';
 FOR: 'for';
 IN: 'in';
+GUARD: 'guard';
 
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;

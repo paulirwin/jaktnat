@@ -31,6 +31,18 @@ internal static class ScopeResolutionEngine
                 }
 
                 break;
+            case GuardSyntax guardSyntax:
+                ResolveScopes(guardSyntax.Condition, parentBlock);
+                ResolveScopes(guardSyntax.ElseNode, parentBlock);
+
+                if (guardSyntax.ElseNode.Child is not (ReturnSyntax
+                    or ThrowSyntax or BreakSyntax or ContinueSyntax
+                    or BlockSyntax { PotentiallyExitsScope: true }))
+                {
+                    throw new CompilerError("Else block of guard must either `return`, `break`, `continue`, or `throw`");
+                }
+                
+                break;
             case ElseSyntax elseSyntax:
                 ResolveScopes(elseSyntax.Child, parentBlock);
                 break;
@@ -125,7 +137,8 @@ internal static class ScopeResolutionEngine
                 {
                     ResolveScopes(throwSyntax.Expression, parentBlock);
                 }
-
+                
+                MarkParentBlocksAsPotentiallyExitingScope(throwSyntax);
                 break;
             case ReturnSyntax returnSyntax:
                 if (returnSyntax.Expression != null)
@@ -133,6 +146,7 @@ internal static class ScopeResolutionEngine
                     ResolveScopes(returnSyntax.Expression, parentBlock);
                 }
 
+                MarkParentBlocksAsPotentiallyExitingScope(returnSyntax);
                 break;
             case ScopeAccessSyntax scopeAccess:
                 ResolveScopes(scopeAccess.Scope, parentBlock);
@@ -170,11 +184,26 @@ internal static class ScopeResolutionEngine
             case ParameterSyntax:
             case PropertySyntax:
             case BreakSyntax:
+                MarkParentBlocksAsPotentiallyExitingScope(node);
+                break;
             case ContinueSyntax:
+                MarkParentBlocksAsPotentiallyExitingScope(node);
+                break;
             case ThisExpressionSyntax:
                 break; // nothing to do
             default:
                 throw new NotImplementedException($"Scope resolution not implemented for syntax type {node.GetType()}");
+        }
+    }
+
+    private static void MarkParentBlocksAsPotentiallyExitingScope(SyntaxNode node)
+    {
+        BlockSyntax? blockSyntax = node.ParentBlock;
+
+        while (blockSyntax != null)
+        {
+            blockSyntax.PotentiallyExitsScope = true;
+            blockSyntax = blockSyntax.ParentBlock;
         }
     }
 }

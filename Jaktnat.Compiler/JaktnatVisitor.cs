@@ -369,7 +369,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return null;
     }
 
-    public override SyntaxNode? VisitIfStatement(JaktnatParser.IfStatementContext context)
+    public override IfSyntax VisitIfStatement(JaktnatParser.IfStatementContext context)
     {
         if (VisitExpression(context.expression()) is not ExpressionSyntax cond)
         {
@@ -385,21 +385,42 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         if (context.elseStatement() is { } elseStatement)
         {
-            if (elseStatement.block() is { } elseBlock && VisitBlock(elseBlock) is BlockSyntax elseBlockSyntax)
-            {
-                elseNode = new ElseSyntax(elseBlockSyntax);
-            }
-            else if (elseStatement.ifStatement() is { } elseIfStatement && VisitIfStatement(elseIfStatement) is IfSyntax elseIfSyntax)
-            {
-                elseNode = new ElseSyntax(elseIfSyntax);
-            }
-            else
-            {
-                throw new ParserError("Unable to parse else block", elseStatement.start);
-            }
+            elseNode = VisitElseStatement(elseStatement);
         }
 
         return new IfSyntax(cond, block, elseNode);
+    }
+    
+    public override GuardSyntax VisitGuardStatement(JaktnatParser.GuardStatementContext context)
+    {
+        if (VisitExpression(context.expression()) is not ExpressionSyntax cond)
+        {
+            throw new ParserError("Unable to parse guard condition", context.Start);
+        }
+
+        if (context.elseStatement() is not { } elseStatement)
+        {
+            throw new ParserError("Expected `else` keyword", context.start);
+        }
+        
+        var elseNode = VisitElseStatement(elseStatement);
+
+        return new GuardSyntax(cond, elseNode);
+    }
+
+    public override ElseSyntax VisitElseStatement(JaktnatParser.ElseStatementContext context)
+    {
+        if (context.block() is { } elseBlock && VisitBlock(elseBlock) is BlockSyntax elseBlockSyntax)
+        {
+            return new ElseSyntax(elseBlockSyntax);
+        }
+
+        if (context.ifStatement() is { } elseIfStatement && VisitIfStatement(elseIfStatement) is IfSyntax elseIfSyntax)
+        {
+            return new ElseSyntax(elseIfSyntax);
+        }
+
+        throw new ParserError("Unable to parse else block", context.start);
     }
 
     public override SyntaxNode? VisitLetStatement(JaktnatParser.LetStatementContext context)
