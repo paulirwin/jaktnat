@@ -5,6 +5,7 @@ namespace Jaktnat.Compiler.Reflection;
 
 internal class ForwardDeclarationEngine :
     ISyntaxVisitor<ClassDeclarationSyntax>,
+    ISyntaxVisitor<StructDeclarationSyntax>,
     ISyntaxVisitor<FunctionSyntax>,
     ISyntaxVisitor<MemberFunctionDeclarationSyntax>,
     ISyntaxVisitor<ParameterSyntax>
@@ -20,6 +21,23 @@ internal class ForwardDeclarationEngine :
     public void Visit(CompilationContext context, ClassDeclarationSyntax node)
     {
         context.CompilationUnit.DeclareType(node.Name, node);
+        
+        var parameters = node.Members.OfType<PropertySyntax>()
+            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier, null) { ParentBlock = node.ParentBlock })
+            .ToList();
+
+        node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));
+    }
+    
+    public void Visit(CompilationContext context, StructDeclarationSyntax node)
+    {
+        context.CompilationUnit.DeclareType(node.Name, node);
+        
+        var parameters = node.Members.OfType<PropertySyntax>()
+            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier, null) { ParentBlock = node.ParentBlock })
+            .ToList();
+        
+        node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));
     }
 
     public void Visit(CompilationContext context, FunctionSyntax node)

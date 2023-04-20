@@ -1,0 +1,10 @@
+/// Expect:
+/// - output: "Compiled!\n"
+
+struct EmptyStruct {
+}
+
+fn main() {
+    let e = EmptyStruct()
+    println("Compiled!")
+}

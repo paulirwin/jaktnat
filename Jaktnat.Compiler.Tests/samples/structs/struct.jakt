@@ -1,0 +1,14 @@
+/// Expect:
+/// - output: "Jane\n100\n"
+
+struct Person {
+    name: String
+    age: i64
+}
+
+fn main() {
+    let p = Person(name: "Jane", age: 100)
+
+    println("{}", p.name)
+    println("{}", p.age)
+}

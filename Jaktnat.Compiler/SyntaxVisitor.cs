@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Jaktnat.Compiler.Syntax;
+﻿using Jaktnat.Compiler.Syntax;
 
 namespace Jaktnat.Compiler;
 
@@ -35,6 +34,10 @@ internal static class SyntaxVisitor
 
             VisitInternal(obj, context, function.Parameters);
             VisitInternal(obj, context, function.Body);
+        }
+        else if (node is ConstructorSyntax constructor)
+        {
+            VisitInternal(obj, context, constructor.Parameters);
         }
         else if (node is ExpressionBlockSyntax expressionBlock)
         {
@@ -164,9 +167,16 @@ internal static class SyntaxVisitor
             VisitInternal(obj, context, indexerAccess.Target);
             VisitInternal(obj, context, indexerAccess.Argument);
         }
-        else if (node is ClassDeclarationSyntax classDeclaration)
+        else if (node is TypeDeclarationSyntax typeDeclaration)
         {
-            foreach (var member in classDeclaration.Members)
+            // NOTE: this branch handles ClassDeclarationSyntax and StructDeclarationSyntax
+            
+            foreach (var typeCtor in typeDeclaration.Constructors)
+            {
+                VisitInternal(obj, context, typeCtor);
+            }
+            
+            foreach (var member in typeDeclaration.Members)
             {
                 VisitInternal(obj, context, member);
             }

@@ -21,7 +21,6 @@ internal class NameResolutionEngine :
     ISyntaxVisitor<MemberAccessSyntax>,
     ISyntaxVisitor<IndexerAccessSyntax>,
     ISyntaxVisitor<PropertySyntax>,
-    ISyntaxVisitor<ClassDeclarationSyntax>,
     ISyntaxVisitor<ParenthesizedExpressionSyntax>,
     ISyntaxVisitor<ScopeAccessSyntax>,
     ISyntaxVisitor<BlockScopedIdentifierSyntax>,
@@ -108,9 +107,9 @@ internal class NameResolutionEngine :
                 identifier.ExpressionType = members[0].GetType();
                 identifier.CompileTimeTarget = members;
             }
-            else if (identifier.ParentTarget.ExpressionType is DeclaredTypeReference { DeclaredType: ClassDeclarationSyntax classDecl })
+            else if (identifier.ParentTarget.ExpressionType is DeclaredTypeReference { DeclaredType: TypeDeclarationSyntax typeDecl })
             {
-                var member = classDecl.Members.FirstOrDefault(i => i.Name == identifier.Name);
+                var member = typeDecl.Members.FirstOrDefault(i => i.Name == identifier.Name);
 
                 if (member == null)
                 {
@@ -286,7 +285,7 @@ internal class NameResolutionEngine :
             return;
         }
 
-        throw new CompilerError($"Unable to resolve overload");
+        throw new CompilerError("Unable to resolve overload");
     }
 
     private static bool ResolveMethodOverloads(IList<Function>? possibleMatches,
@@ -679,15 +678,6 @@ internal class NameResolutionEngine :
     public void Visit(CompilationContext context, PropertySyntax node)
     {
         node.Type = node.TypeIdentifier.Type;
-    }
-
-    public void Visit(CompilationContext context, ClassDeclarationSyntax node)
-    {
-        var parameters = node.Members.OfType<PropertySyntax>()
-            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier, null) { ParentBlock = node.ParentBlock, Type = i.Type })
-            .ToList();
-
-        node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));
     }
 
     public void Visit(CompilationContext context, ParenthesizedExpressionSyntax node)

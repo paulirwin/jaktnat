@@ -22,7 +22,7 @@ public static class ConsoleFunctions
         Console.Write(format);
     }
 
-    [FreeFunction("println")]
+    [FreeFunction("print")]
     public static void Print(string format, object arg)
     {
         PrintInternal(format, new[] { arg }, false);

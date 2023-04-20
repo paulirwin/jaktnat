@@ -124,6 +124,13 @@ internal static class ScopeResolutionEngine
                 }
 
                 break;
+            case StructDeclarationSyntax structDeclaration:
+                foreach (var member in structDeclaration.Members)
+                {
+                    ResolveScopes(member, parentBlock);
+                }
+
+                break;
             case TrySyntax trySyntax:
                 ResolveScopes(trySyntax.Tryable, parentBlock);
                 ResolveScopes(trySyntax.Catch, parentBlock);

@@ -3,7 +3,8 @@ grammar Jaktnat;
 file: declaration* EOF;
 
 declaration: function
-    | classDeclaration;
+    | classDeclaration
+    | structDeclaration;
 
 function: visibilityModifier? FUNCTION NAME LPAREN parameterList? RPAREN 
     THROWS? functionReturnType? 
@@ -11,9 +12,11 @@ function: visibilityModifier? FUNCTION NAME LPAREN parameterList? RPAREN
 
 functionReturnType: ARROW type;
 
-classDeclaration: CLASS NAME LCURLY classMember* RCURLY;
+classDeclaration: CLASS NAME LCURLY classOrStructMember* RCURLY;
 
-classMember: property | function;
+structDeclaration: STRUCT NAME LCURLY classOrStructMember* RCURLY;
+
+classOrStructMember: property | function;
 
 property: visibilityModifier? NAME variableDeclarationType;
 
@@ -235,6 +238,7 @@ PUBLIC: 'public';
 PRIVATE: 'private';
 FUNCTION: 'fn';
 CLASS: 'class';
+STRUCT: 'struct';
 THIS: 'this';
 WHILE: 'while';
 LOOP: 'loop';

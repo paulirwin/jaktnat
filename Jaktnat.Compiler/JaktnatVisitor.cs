@@ -4,7 +4,7 @@ namespace Jaktnat.Compiler;
 
 internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 {
-    public override SyntaxNode? VisitFile(JaktnatParser.FileContext context)
+    public override CompilationUnitSyntax VisitFile(JaktnatParser.FileContext context)
     {
         var compilationUnit = new CompilationUnitSyntax();
 
@@ -21,7 +21,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return compilationUnit;
     }
 
-    public override SyntaxNode? VisitFunction(JaktnatParser.FunctionContext context)
+    public override FunctionSyntax VisitFunction(JaktnatParser.FunctionContext context)
     {
         var name = context.NAME().GetText();
 
@@ -102,14 +102,9 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
 
         var classSyntax = new ClassDeclarationSyntax(name);
 
-        foreach (var classMember in context.classMember())
+        foreach (var classMember in context.classOrStructMember())
         {
-            var member = Visit(classMember) switch
-            {
-                MemberDeclarationSyntax m => m,
-                FunctionSyntax f => new MemberFunctionDeclarationSyntax(f.Name, f),
-                _ => throw new ParserError("Unexpected result from visiting class member", classMember.start)
-            };
+            var member = VisitClassOrStructMember(classMember);
             
             classSyntax.Members.Add(member);
         }
@@ -117,7 +112,39 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return classSyntax;
     }
 
-    public override SyntaxNode? VisitProperty(JaktnatParser.PropertyContext context)
+    public override SyntaxNode VisitStructDeclaration(JaktnatParser.StructDeclarationContext context)
+    {
+        var name = context.NAME().GetText();
+
+        var structSyntax = new StructDeclarationSyntax(name);
+
+        foreach (var structMember in context.classOrStructMember())
+        {
+            var member = VisitClassOrStructMember(structMember);
+            
+            structSyntax.Members.Add(member);
+        }
+
+        return structSyntax;
+    }
+
+    public override MemberDeclarationSyntax VisitClassOrStructMember(JaktnatParser.ClassOrStructMemberContext context)
+    {
+        if (context.function() is { } functionContext)
+        {
+            var f = VisitFunction(functionContext);
+            return new MemberFunctionDeclarationSyntax(f.Name, f);
+        }
+
+        if (context.property() is { } propertyContext)
+        {
+            return VisitProperty(propertyContext);
+        }
+
+        throw new ParserError("Unexpected result from visiting class member", context.start);
+    }
+
+    public override PropertySyntax VisitProperty(JaktnatParser.PropertyContext context)
     {
         var name = context.NAME().GetText();
 

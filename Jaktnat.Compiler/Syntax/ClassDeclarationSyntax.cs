@@ -7,7 +7,5 @@ public class ClassDeclarationSyntax : TypeDeclarationSyntax
     {
     }
 
-    public IList<MemberDeclarationSyntax> Members { get; set; } = new List<MemberDeclarationSyntax>();
-
     public override string ToString() => $"class {Name} {{{string.Join(Environment.NewLine, Members.Select(i => $"    {i}"))}}}";
 }

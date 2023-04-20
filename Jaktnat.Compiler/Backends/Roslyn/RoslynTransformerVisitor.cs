@@ -18,10 +18,13 @@ using CSParameterSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax;
 using CSExpressionSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ExpressionSyntax;
 using CSMemberDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MemberDeclarationSyntax;
 using CSClassDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax;
+using CSStructDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.StructDeclarationSyntax;
 using CSMethodDeclarationSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax;
 using CSCompilationUnitSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.CompilationUnitSyntax;
 using ExpressionSyntax = Jaktnat.Compiler.Syntax.ExpressionSyntax;
+using StructDeclarationSyntax = Jaktnat.Compiler.Syntax.StructDeclarationSyntax;
 using ThisExpressionSyntax = Jaktnat.Compiler.Syntax.ThisExpressionSyntax;
+using TypeDeclarationSyntax = Jaktnat.Compiler.Syntax.TypeDeclarationSyntax;
 
 namespace Jaktnat.Compiler.Backends.Roslyn;
 
@@ -52,6 +55,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             UnaryExpressionSyntax unary => VisitUnary(context, unary),
             ArraySyntax array => VisitArray(context, array),
             ClassDeclarationSyntax classDecl => VisitClassDeclaration(context, classDecl),
+            StructDeclarationSyntax structDecl => VisitStructDeclaration(context, structDecl),
             MemberFunctionDeclarationSyntax memberFunction => VisitMemberFunction(context, memberFunction),
             BreakSyntax => SyntaxFactory.BreakStatement(),
             ContinueSyntax => SyntaxFactory.ContinueStatement(),
@@ -274,6 +278,20 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
     private CSharpSyntaxNode VisitClassDeclaration(CompilationContext context, ClassDeclarationSyntax classDecl)
     {
+        var members = GetTypeDeclarationMembers(context, classDecl);
+
+        var clazz = SyntaxFactory.ClassDeclaration(classDecl.Name);
+
+        return members.Count == 0
+            ? clazz.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
+            : clazz.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+                .WithMembers(SyntaxFactory.List(members))
+                .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
+    }
+
+    private List<CSMemberDeclarationSyntax> GetTypeDeclarationMembers(CompilationContext context, TypeDeclarationSyntax classDecl)
+    {
         if (classDecl.Constructors.Count != 1)
         {
             throw new NotImplementedException("Records must have one constructor");
@@ -299,13 +317,20 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             .ToList();
 
         members.Insert(0, ctor);
+        
+        return members;
+    }
 
-        var clazz = SyntaxFactory.ClassDeclaration(classDecl.Name);
+    private CSharpSyntaxNode VisitStructDeclaration(CompilationContext context, StructDeclarationSyntax structDecl)
+    {
+        var members = GetTypeDeclarationMembers(context, structDecl);
+
+        var decl = SyntaxFactory.StructDeclaration(structDecl.Name);
 
         return members.Count == 0
-            ? clazz.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+            ? decl.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
                 .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken))
-            : clazz.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
+            : decl.WithOpenBraceToken(SyntaxFactory.Token(SyntaxKind.OpenBraceToken))
                 .WithMembers(SyntaxFactory.List(members))
                 .WithCloseBraceToken(SyntaxFactory.Token(SyntaxKind.CloseBraceToken));
     }
@@ -893,6 +918,10 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             if (result is CSClassDeclarationSyntax classDecl)
             {
                 members.Add(classDecl);
+            }
+            else if (result is CSStructDeclarationSyntax structDecl)
+            {
+                members.Add(structDecl);
             }
             else if (result is RecordDeclarationSyntax record)
             {
