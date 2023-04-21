@@ -55,7 +55,7 @@ Language features:
 - [X] Class static member functions
 - [ ] Class non-mutating member functions
 - [X] Class mutating member functions
-- [ ] Structs
+- [X] Structs
 - [ ] Enums
 - [X] Arrays
 - [X] Built-in type identifiers (i.e. `i32` -> `System.Int32`)
@@ -121,12 +121,12 @@ Other notes from Jakt README:
 - [ ] Error propagation with `ErrorOr<T>` and `try`/`must` keywords
 - [ ] Anonymous function parameters (partial; non-anonymous not yet enforced)
 - [ ] Allow not specifying argument name if passing variable of same name (partial; not enforced otherwise)
-- [ ] Private-by-default members
+- [X] Private-by-default members
 - [ ] Inheritance
 - [ ] Class-based polymorphism
 - [ ] `Super` type
 - [ ] `Self` type
-- [ ] `.` shorthand syntax for accessing members
+- [X] `.` shorthand syntax for accessing members
 - [ ] Array initializer size/value syntax (i.e. `[0; 256]`)
 - [X] Array initializer expressions (i.e. `[1, 2, 3]`)
 - [ ] Declaring/Creating dictionaries

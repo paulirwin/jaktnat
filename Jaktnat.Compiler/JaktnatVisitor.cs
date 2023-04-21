@@ -178,7 +178,14 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             }
         }
 
-        return new PropertySyntax(name, type, modifiers);
+        ExpressionSyntax? defaultExpression = null;
+        
+        if (context.defaultArgument() is { } defaultArgument)
+        {
+            defaultExpression = VisitExpression(defaultArgument.expression());
+        }
+
+        return new PropertySyntax(name, type, modifiers, defaultExpression);
     }
 
     public override SyntaxNode? VisitParameterList(JaktnatParser.ParameterListContext context)
@@ -620,7 +627,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return base.VisitPrimaryExpr(context);
     }
 
-    public override SyntaxNode? VisitExpression(JaktnatParser.ExpressionContext context)
+    public override ExpressionSyntax VisitExpression(JaktnatParser.ExpressionContext context)
     {
         if (context.typeCastOperator() is { } typeCastOperator)
         {
@@ -666,7 +673,8 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             return VisitIndexerAccessExpression(context, indexer);
         }
 
-        return base.VisitExpression(context);
+        return base.VisitExpression(context) as ExpressionSyntax 
+               ?? throw new ParserError("Unable to parse expression", context.start);
     }
 
     public override SyntaxNode VisitThisExpression(JaktnatParser.ThisExpressionContext context)
@@ -674,7 +682,17 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new ThisExpressionSyntax();
     }
 
-    private SyntaxNode VisitMemberAccessExpression(JaktnatParser.ExpressionContext context, JaktnatParser.MemberAccessContext memberAccess)
+    public override MemberAccessSyntax VisitMemberAccess(JaktnatParser.MemberAccessContext context)
+    {
+        if (Visit(context.identifier()) is not IdentifierExpressionSyntax identifier)
+        {
+            throw new ParserError("Unable to parse member access identifier", context.start);
+        }
+
+        return new MemberAccessSyntax(identifier);
+    }
+
+    private MemberAccessSyntax VisitMemberAccessExpression(JaktnatParser.ExpressionContext context, JaktnatParser.MemberAccessContext memberAccess)
     {
         var exprs = context.expression();
 
@@ -688,15 +706,12 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             throw new ParserError("Invalid member access syntax", context.start);
         }
 
-        if (Visit(memberAccess.identifier()) is not IdentifierExpressionSyntax identifier)
-        {
-            throw new ParserError("Unable to parse member access identifier", context.start);
-        }
+        var syntax = VisitMemberAccess(memberAccess);
 
-        return new MemberAccessSyntax(target, identifier);
+        return syntax.WithTarget(target);
     }
 
-    private SyntaxNode VisitTypeCheckExpression(JaktnatParser.ExpressionContext context)
+    private TypeCheckSyntax VisitTypeCheckExpression(JaktnatParser.ExpressionContext context)
     {
         var exprs = context.expression();
 
@@ -742,7 +757,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new UnaryExpressionSyntax(expression, op);
     }
 
-    private SyntaxNode VisitPostfixUnaryExpression(JaktnatParser.ExpressionContext context, JaktnatParser.PostfixUnaryOperatorContext unaryOperator)
+    private UnaryExpressionSyntax VisitPostfixUnaryExpression(JaktnatParser.ExpressionContext context, JaktnatParser.PostfixUnaryOperatorContext unaryOperator)
     {
         var exprs = context.expression();
 
@@ -766,7 +781,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new UnaryExpressionSyntax(expr, op);
     }
 
-    private SyntaxNode? VisitIndexerAccessExpression(JaktnatParser.ExpressionContext context, JaktnatParser.IndexerAccessContext indexer)
+    private IndexerAccessSyntax VisitIndexerAccessExpression(JaktnatParser.ExpressionContext context, JaktnatParser.IndexerAccessContext indexer)
     {
         var exprs = context.expression();
 
@@ -788,7 +803,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new IndexerAccessSyntax(target, arg);
     }
 
-    private SyntaxNode? VisitCallExpression(JaktnatParser.ExpressionContext context, JaktnatParser.CallContext call)
+    private CallSyntax VisitCallExpression(JaktnatParser.ExpressionContext context, JaktnatParser.CallContext call)
     {
         var exprs = context.expression();
 
@@ -815,7 +830,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new CallSyntax(target, args!);
     }
     
-    private SyntaxNode VisitBinaryExpression(JaktnatParser.ExpressionContext context)
+    private BinaryExpressionSyntax VisitBinaryExpression(JaktnatParser.ExpressionContext context)
     {
         var exprs = context.expression();
 
@@ -875,7 +890,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new BinaryExpressionSyntax(left, op, right);
     }
 
-    private SyntaxNode VisitTypeCastExpression(JaktnatParser.ExpressionContext context, JaktnatParser.TypeCastOperatorContext typeCastOperator)
+    private TypeCastSyntax VisitTypeCastExpression(JaktnatParser.ExpressionContext context, JaktnatParser.TypeCastOperatorContext typeCastOperator)
     {
         var exprs = context.expression();
 

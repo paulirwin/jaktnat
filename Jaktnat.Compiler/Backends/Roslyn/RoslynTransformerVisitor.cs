@@ -174,17 +174,27 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             .WithUsingKeyword(SyntaxFactory.Token(SyntaxKind.UsingKeyword));
     }
 
-    private CSharpSyntaxNode? VisitProperty(CompilationContext context, PropertySyntax property)
+    private CSharpSyntaxNode VisitProperty(CompilationContext context, PropertySyntax property)
     {
         if (property.Type?.FullName == null)
         {
             throw new CompilerError("Property must have a type");
         }
+        
+        var visibility = property.Modifiers switch
+        {
+            VisibilityModifier.Public => SyntaxKind.PublicKeyword,
+            VisibilityModifier.Private => SyntaxKind.PrivateKeyword,
+            VisibilityModifier.None => property.DeclaringType is ClassDeclarationSyntax
+                ? SyntaxKind.PrivateKeyword
+                : SyntaxKind.PublicKeyword,
+            _ => throw new CompilerError("Property must have a visibility")
+        };
 
         return SyntaxFactory.PropertyDeclaration(
                 SyntaxFactory.ParseTypeName(property.Type.FullName),
                 SyntaxFactory.Identifier(property.Name))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(visibility)))
             .WithAccessorList(SyntaxFactory.AccessorList(SyntaxFactory.List(new[]
             {
                 SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
@@ -200,6 +210,12 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
         if (Visit(context, memberFunction.Function) is not CSMethodDeclarationSyntax method)
         {
             throw new CompilerError("Member function did not evaluate to a method");
+        }
+
+        if (memberFunction.DeclaringType is StructDeclarationSyntax
+            && !method.Modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword)))
+        {   
+            method = method.WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)));
         }
 
         return method;
@@ -297,7 +313,9 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             throw new NotImplementedException("Records must have one constructor");
         }
 
-        var parameters = classDecl.Constructors[0].Parameters.Parameters.Select(i => VisitParameter(context, i))
+        var parameters = classDecl.Constructors[0].Parameters.Parameters
+            .OrderBy(i => i.DefaultArgument == null ? 0 : 1)
+            .Select(i => VisitParameter(context, i))
             .Cast<CSParameterSyntax>().ToList();
 
         var ctor = SyntaxFactory.ConstructorDeclaration(classDecl.Name)
@@ -410,9 +428,20 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
 
     private CSharpSyntaxNode VisitMemberAccess(CompilationContext context, MemberAccessSyntax memberAccess)
     {
-        if (Visit(context, memberAccess.Target) is not CSExpressionSyntax expression)
+        CSExpressionSyntax expression;
+
+        if (memberAccess.Target is { } target)
         {
-            throw new CompilerError("Member access expression did not evaluate to an expression");
+            if (Visit(context, target) is not CSExpressionSyntax targetExpression)
+            {
+                throw new CompilerError("Member access expression did not evaluate to an expression");
+            }
+            
+            expression = targetExpression;
+        }
+        else
+        {
+            expression = SyntaxFactory.ThisExpression();
         }
 
         return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, expression,

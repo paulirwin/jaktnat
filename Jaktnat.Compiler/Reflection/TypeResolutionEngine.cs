@@ -7,7 +7,8 @@ internal class TypeResolutionEngine :
     ISyntaxVisitor<ArrayTypeIdentifierSyntax>,
     ISyntaxVisitor<NamedTypeIdentifierSyntax>,
     ISyntaxVisitor<CatchSyntax>,
-    ISyntaxVisitor<ParameterSyntax>
+    ISyntaxVisitor<ParameterSyntax>,
+    ISyntaxVisitor<MemberAccessSyntax>
 {
     public void Visit(CompilationContext context, FunctionSyntax node)
     {
@@ -80,5 +81,10 @@ internal class TypeResolutionEngine :
         }
         
         node.Type = node.TypeIdentifier.Type;
+    }
+
+    public void Visit(CompilationContext context, MemberAccessSyntax node)
+    {
+        node.Member.ParentTarget = node.Target;
     }
 }

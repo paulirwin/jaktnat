@@ -14,5 +14,5 @@ internal static class ArrayExtensions
         }
 
         return -1;
-    }
+    }   
 }

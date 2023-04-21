@@ -1,0 +1,38 @@
+/// Expect:
+/// - output: "Jane\n100\nJane\n100\n\n0\n"
+// Jaktnat change: was: "Jane\n100\nJane\n100\nJane\n100\n" - see note below
+
+struct Person1 {
+    private name: String = "Jane"
+    age: i64
+    fn getName(this) -> String => .name
+    fn getAge(this) -> i64 => .age
+}
+
+struct Person2 {
+    name: String
+    private age: i64 = 100
+    fn getName(this) -> String => .name
+    fn getAge(this) -> i64 => .age
+}
+
+struct Person3 {
+    private name: String = "Jane"
+    private age: i64 = 100
+    fn getName(this) -> String => .name
+    fn getAge(this) -> i64 => .age
+}
+
+fn main() {
+    let p1 = Person1(age: 100)
+    println("{}", p1.getName())
+    println("{}", p1.getAge())
+    let p2 = Person2(name: "Jane")
+    println("{}", p2.getName())
+    println("{}", p2.getAge())
+    let p3 = Person3()
+    // Jaktnat note: this differs from Jakt and returns null,
+    // because structs in C# get a default parameterless constructor
+    println("{}", p3.getName()) 
+    println("{}", p3.getAge())
+}

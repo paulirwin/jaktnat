@@ -11,24 +11,24 @@ public static class StringFunctions
     }
 
     [FreeFunction("format")]
-    public static string Format(string format, object arg)
+    public static string Format(string format, object? arg)
     {
         return FormatInternal(format, arg);
     }
 
     [FreeFunction("format")]
-    public static string Format(string format, object arg1, object arg2)
+    public static string Format(string format, object? arg1, object? arg2)
     {
         return FormatInternal(format, arg1, arg2);
     }
 
     [FreeFunction("format")]
-    public static string Format(string format, object arg1, object arg2, object arg3)
+    public static string Format(string format, object? arg1, object? arg2, object? arg3)
     {
         return FormatInternal(format, arg1, arg2, arg3);
     }
 
-    internal static string FormatInternal(string format, params object[] args)
+    internal static string FormatInternal(string format, params object?[] args)
     {
         var sb = new StringBuilder();
         int valueIndex = 0;
@@ -43,7 +43,8 @@ public static class StringFunctions
                 {
                     double d => d.ToString("0.######"),
                     float f => f.ToString("0.######"),
-                    object o => o
+                    object o => o,
+                    null => "",
                 };
 
                 sb.Append(arg);

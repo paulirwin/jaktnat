@@ -18,7 +18,7 @@ structDeclaration: STRUCT NAME LCURLY classOrStructMember* RCURLY;
 
 classOrStructMember: property | function;
 
-property: visibilityModifier? NAME variableDeclarationType;
+property: visibilityModifier? NAME variableDeclarationType defaultArgument?;
 
 visibilityModifier: PUBLIC | PRIVATE;
 
@@ -119,7 +119,8 @@ primaryExpr:
     | prefixUnaryOperator expression
     | typeName
     | array
-    | scopeAccess;
+    | scopeAccess
+    | memberAccess;
     
 thisExpression: THIS;
 

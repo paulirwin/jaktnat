@@ -23,10 +23,26 @@ internal class ForwardDeclarationEngine :
         context.CompilationUnit.DeclareType(node.Name, node);
         
         var parameters = node.Members.OfType<PropertySyntax>()
-            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier, null) { ParentBlock = node.ParentBlock })
+            .Select(i => new ParameterSyntax(
+                anonymous: false, 
+                name: i.Name, 
+                mutable: false, 
+                typeIdentifier: i.TypeIdentifier, 
+                defaultArgument: i.DefaultExpression)
+            {
+                ParentBlock = node.ParentBlock
+            })
             .ToList();
 
         node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));
+    }
+    
+    public void PreVisit(CompilationContext context, StructDeclarationSyntax node)
+    {
+        foreach (var member in node.Members)
+        {
+            member.DeclaringType = node;
+        }
     }
     
     public void Visit(CompilationContext context, StructDeclarationSyntax node)
@@ -34,7 +50,15 @@ internal class ForwardDeclarationEngine :
         context.CompilationUnit.DeclareType(node.Name, node);
         
         var parameters = node.Members.OfType<PropertySyntax>()
-            .Select(i => new ParameterSyntax(false, i.Name, false, i.TypeIdentifier, null) { ParentBlock = node.ParentBlock })
+            .Select(i => new ParameterSyntax(
+                anonymous: false, 
+                name: i.Name, 
+                mutable: false, 
+                typeIdentifier: i.TypeIdentifier, 
+                defaultArgument: i.DefaultExpression)
+            {
+                ParentBlock = node.ParentBlock
+            })
             .ToList();
         
         node.Constructors.Add(new ConstructorSyntax(node, new ParameterListSyntax(parameters)));

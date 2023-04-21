@@ -81,6 +81,7 @@
         <EmbeddedResource Include="samples\guard\no_scope_exit.jakt" />
         <EmbeddedResource Include="samples\structs\empty_struct.jakt" />
         <EmbeddedResource Include="samples\structs\struct.jakt" />
+        <EmbeddedResource Include="samples\structs\field_default_values.jakt" />
     </ItemGroup>
 
     <ItemGroup>

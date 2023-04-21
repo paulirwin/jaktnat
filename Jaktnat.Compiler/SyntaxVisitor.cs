@@ -155,10 +155,10 @@ internal static class SyntaxVisitor
         }
         else if (node is MemberAccessSyntax memberAccess)
         {
-            VisitInternal(obj, context, memberAccess.Target);
-
-            // HACK: set parent target on member identifier
-            memberAccess.Member.ParentTarget = memberAccess.Target;
+            if (memberAccess.Target is { } target)
+            {
+                VisitInternal(obj, context, target);
+            }
 
             VisitInternal(obj, context, memberAccess.Member);
         }

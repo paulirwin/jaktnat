@@ -107,7 +107,11 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(parenthesizedExpression.Expression, parentBlock);
                 break;
             case MemberAccessSyntax memberAccess:
-                ResolveScopes(memberAccess.Target, parentBlock);
+                if (memberAccess.Target is { } target)
+                {
+                    ResolveScopes(target, parentBlock);
+                }
+
                 ResolveScopes(memberAccess.Member, parentBlock);
                 break;
             case ParameterListSyntax parameterList:
