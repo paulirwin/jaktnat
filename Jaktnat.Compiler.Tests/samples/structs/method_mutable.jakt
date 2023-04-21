@@ -1,0 +1,22 @@
+/// Expect:
+/// - output: "128\n"
+
+struct Rectangle {
+    width: i64,
+    height: i64,
+
+    fn grow(mut this) {
+        this.width *= 2;
+        this.height *= 2;
+    }
+
+    fn area(this) -> i64 => this.width * this.height
+}
+
+fn main() {
+    mut rect = Rectangle(width: 4, height: 8)
+
+    rect.grow()
+
+    println("{}", rect.area())
+}

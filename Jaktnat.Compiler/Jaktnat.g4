@@ -16,7 +16,7 @@ classDeclaration: CLASS NAME LCURLY classOrStructMember* RCURLY;
 
 structDeclaration: STRUCT NAME LCURLY classOrStructMember* RCURLY;
 
-classOrStructMember: property | function;
+classOrStructMember: (property | function) COMMA?;
 
 property: visibilityModifier? NAME variableDeclarationType defaultArgument?;
 

@@ -1,0 +1,15 @@
+/// Expect:
+/// - output: "30\n"
+
+struct Size {
+    width: i64
+    height: i64
+
+    fn area(this) -> i64 => .width * .height
+}
+
+
+fn main() {
+    let s = Size(width: 5, height: 6)
+    println("{}", s.area())
+}

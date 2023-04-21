@@ -1,0 +1,15 @@
+/// Expect:
+/// - output: "32\n"
+
+struct Rectangle {
+    width: i64,
+    height: i64,
+
+    fn area(this) -> i64 => this.width * this.height
+}
+
+fn main() {
+    let rect = Rectangle(width: 4, height: 8)
+
+    println("{}", rect.area())
+}

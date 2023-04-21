@@ -82,6 +82,10 @@
         <EmbeddedResource Include="samples\structs\empty_struct.jakt" />
         <EmbeddedResource Include="samples\structs\struct.jakt" />
         <EmbeddedResource Include="samples\structs\field_default_values.jakt" />
+        <EmbeddedResource Include="samples\structs\method_mutable.jakt" />
+        <EmbeddedResource Include="samples\structs\method.jakt" />
+        <EmbeddedResource Include="samples\structs\this_dot_shorthand.jakt" />
+        <EmbeddedResource Include="samples\structs\this_dot_shorthand_method.jakt" />
     </ItemGroup>
 
     <ItemGroup>
