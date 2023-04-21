@@ -217,7 +217,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             var anonymous = namedParameter.ANONYMOUS() != null || namedParameter.ANON() != null;
 
             var name = namedParameter.NAME().GetText();
-            var mutable = namedParameter.MUTABLE() != null;
+            var mutable = namedParameter.MUT() != null;
 
             if (Visit(namedParameter.type()) is not TypeIdentifierSyntax type)
             {
@@ -240,7 +240,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
         else if (context.thisParameter() is { } thisParameter)
         {
-            var mutable = thisParameter.MUT() != null || thisParameter.MUTABLE() != null;
+            var mutable = thisParameter.MUT() != null;
 
             return new ThisParameterSyntax(mutable);
         }
@@ -502,9 +502,9 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         };
     }
 
-    public override SyntaxNode? VisitVariableDeclaration(JaktnatParser.VariableDeclarationContext context)
+    public override VariableDeclarationSyntax VisitVariableDeclaration(JaktnatParser.VariableDeclarationContext context)
     {
-        var mutable = context.MUTABLE() != null;
+        var mutable = context.MUT() != null;
 
         var name = context.NAME().GetText();
 

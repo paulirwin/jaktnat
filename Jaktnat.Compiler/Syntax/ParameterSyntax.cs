@@ -24,11 +24,11 @@ public class ParameterSyntax : DeclarationSyntax
         var sb = new StringBuilder();
 
         if (Anonymous) sb.Append("anonymous ");
+        
+        if (Mutable) sb.Append("mut ");
 
         sb.Append(Name);
         sb.Append(": ");
-
-        if (Mutable) sb.Append("mutable ");
 
         sb.Append(TypeIdentifier);
 

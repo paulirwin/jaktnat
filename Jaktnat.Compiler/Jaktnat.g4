@@ -26,9 +26,9 @@ parameterList: parameter (COMMA parameter)*;
 
 parameter: thisParameter | namedParameter;
 
-thisParameter: (MUT | MUTABLE)? THIS;
+thisParameter: MUT? THIS;
 
-namedParameter: (ANON | ANONYMOUS)? NAME COLON MUTABLE? type defaultArgument?;
+namedParameter: (ANON | ANONYMOUS)? MUT? NAME COLON type defaultArgument?;
 
 defaultArgument: EQUAL expression;
 
@@ -89,7 +89,7 @@ letStatement: LET variableDeclaration EQUAL expression SEMICOLON?;
 
 mutStatement: MUT NAME variableDeclarationType? EQUAL expression SEMICOLON?;
 
-variableDeclaration: MUTABLE? NAME variableDeclarationType?;
+variableDeclaration: MUT? NAME variableDeclarationType?;
 
 variableDeclarationType: COLON type;
 
@@ -249,7 +249,6 @@ RETURN: 'return';
 ANON: 'anon';
 ANONYMOUS: 'anonymous';
 MUT: 'mut';
-MUTABLE: 'mutable';
 TRUE: 'true';
 FALSE: 'false';
 AND: 'and';

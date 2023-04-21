@@ -1,0 +1,22 @@
+/// Expect:
+/// - output: "5\n5\n5\n"
+
+struct Foo {
+    x: i64
+}
+
+fn set_x(mut foo: Foo, x: i64) {
+    foo.x = x
+}
+
+fn main() {
+    let foo = Foo(x: 5)
+    println("{}", foo.x)
+
+    set_x(foo: foo, x: 10)
+    println("{}", foo.x)
+
+    mut bar = foo
+    bar.x = 15
+    println("{}", foo.x)
+}
