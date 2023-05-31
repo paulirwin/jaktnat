@@ -71,7 +71,7 @@ Language features:
 - [X] Indexer access (for arrays or Dictionaries or such, i.e. `x[y + 2]`)
 - [X] Integer literals (`System.Int32` by default, if no suffix given)
 - [X] Underscore support in integer literals
-- [ ] Binary literals
+- [X] Binary literals
 - [X] Boolean literals (`true`, `false`)
 - [ ] Byte literals
 - [ ] Character literals

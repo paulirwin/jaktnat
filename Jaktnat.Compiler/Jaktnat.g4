@@ -138,7 +138,13 @@ scopeAccess: identifier DOUBLECOLON identifier;
 
 indexerAccess: LBRACKET expression RBRACKET;
 
-literal: number | STRING | CHARACTER | TRUE | FALSE;
+literal: 
+    number 
+    | BINARY_LITERAL
+    | STRING 
+    | CHARACTER 
+    | TRUE 
+    | FALSE;
 
 array: LBRACKET expressionList RBRACKET;
 
@@ -282,6 +288,7 @@ MATCH: 'match';
 
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;
+BINARY_LITERAL: BINARY_LITERAL_PREFIX BINARY_DIGIT+;
 
 NAME: (LOWER | UPPER | UNDERSCORE) (LOWER | UPPER | NUMBER_DIGIT)*;
 
@@ -342,7 +349,9 @@ DOT: '.';
 SEMICOLON: ';';
 //EOL: '\n';
 
+fragment BINARY_LITERAL_PREFIX: '0b' | '0B';
 fragment NUMBER_DIGIT: [0-9_];
+fragment BINARY_DIGIT: [0-1_];
 
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
 

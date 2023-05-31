@@ -349,6 +349,34 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
             return new LiteralExpressionSyntax(false);
         }
 
+        if (context.BINARY_LITERAL() is { } binaryLiteral)
+        {
+            var binaryLiteralText = binaryLiteral.GetText().ToLowerInvariant();
+            
+            if (!binaryLiteralText.StartsWith("0b"))
+            {
+                throw new ParserError("Binary literal does not start with 0b", context.start);
+            }
+            
+            var binary = binaryLiteralText[2..].Replace("_", "");
+            
+            if (binary.Any(c => c is not '0' and not '1'))
+            {
+                throw new ParserError("Binary literal contains invalid characters", context.start);
+            }
+
+            object value = binary.Length switch
+            {
+                >= 1 and <= 8 => Convert.ToByte(binary, 2),
+                <= 16 => Convert.ToUInt16(binary, 2),
+                <= 32 => Convert.ToUInt32(binary, 2),
+                <= 64 => Convert.ToUInt64(binary, 2),
+                _ => throw new ParserError("Binary literal is too long", context.start)
+            };
+            
+            return new LiteralExpressionSyntax(value);
+        }
+
         return base.VisitLiteral(context);
     }
 
