@@ -189,17 +189,46 @@ internal static class ScopeResolutionEngine
                 ResolveScopes(forInSyntax.Expression, parentBlock);
                 ResolveScopes(forInSyntax.Block, parentBlock);
                 break;
-            case IdentifierExpressionSyntax:
-            case BlockScopedIdentifierSyntax:
-            case LiteralExpressionSyntax:
-            case ParameterSyntax:
-            case PropertySyntax:
             case BreakSyntax:
                 MarkParentBlocksAsPotentiallyExitingScope(node);
                 break;
             case ContinueSyntax:
                 MarkParentBlocksAsPotentiallyExitingScope(node);
                 break;
+            case MatchStatementSyntax matchStatement:
+                ResolveScopes(matchStatement.MatchExpression, parentBlock);
+                break;
+            case MatchExpressionSyntax matchExpression:
+                ResolveScopes(matchExpression.Expression, parentBlock);
+                
+                foreach (var matchCase in matchExpression.Cases)
+                {
+                    ResolveScopes(matchCase, parentBlock);
+                }
+                
+                break;
+            case MatchCaseSyntax matchCase:
+                foreach (var pattern in matchCase.Patterns)
+                {
+                    ResolveScopes(pattern, parentBlock);
+                }
+                ResolveScopes(matchCase.Body, parentBlock);
+                break;
+            case MatchCasePatternExpressionSyntax patternExpression:
+                ResolveScopes(patternExpression.Expression, parentBlock);
+                break;
+            case MatchCaseExpressionBodySyntax expressionBody:
+                ResolveScopes(expressionBody.Expression, parentBlock);
+                break;
+            case MatchCaseBlockBodySyntax blockBody:
+                ResolveScopes(blockBody.Block, parentBlock);
+                break;
+            case MatchCasePatternElseSyntax:
+            case IdentifierExpressionSyntax:
+            case BlockScopedIdentifierSyntax:
+            case LiteralExpressionSyntax:
+            case ParameterSyntax:
+            case PropertySyntax:
             case ThisExpressionSyntax:
                 break; // nothing to do
             default:

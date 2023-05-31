@@ -68,9 +68,65 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
             UnsafeBlockSyntax unsafeBlock => VisitUnsafeBlock(context, unsafeBlock),
             CSharpBlockSyntax csharpBlock => VisitCSharpBlock(context, csharpBlock),
             ForInSyntax forInSyntax => VisitForInSyntax(context, forInSyntax),
+            MatchStatementSyntax matchStatement => VisitMatchStatement(context, matchStatement),
             _ => throw new NotImplementedException(
                 $"Support for visiting {node.GetType()} nodes in Roslyn transformer not yet implemented")
         };
+    }
+
+    private CSharpSyntaxNode VisitMatchStatement(CompilationContext context, MatchStatementSyntax matchStatement)
+    {
+        if (Visit(context, matchStatement.MatchExpression.Expression) is not CSExpressionSyntax matchExpression)
+        {
+            throw new CompilerError("Expected an expression for match statement target");
+        }
+
+        return SyntaxFactory.SwitchStatement(matchExpression,
+            SyntaxFactory.List(matchStatement.MatchExpression.Cases.Select(c => VisitMatchCase(context, c))));
+    }
+
+    private SwitchSectionSyntax VisitMatchCase(CompilationContext context, MatchCaseSyntax matchCaseSyntax)
+    {
+        var labels = CreateMatchCaseLabels(context, matchCaseSyntax);
+
+        var statements = CreateMatchCaseStatements(context, matchCaseSyntax);
+        
+        return SyntaxFactory.SwitchSection(labels, statements);
+    }
+
+    private SyntaxList<StatementSyntax> CreateMatchCaseStatements(CompilationContext context, MatchCaseSyntax matchCaseSyntax)
+    {
+        return SyntaxFactory.List(matchCaseSyntax.Body switch
+        {
+            MatchCaseExpressionBodySyntax expressionBody => new StatementSyntax[]
+            {
+                SyntaxFactory.ExpressionStatement(
+                    Visit(context, expressionBody.Expression) as CSExpressionSyntax
+                    ?? throw new CompilerError("Expected an expression for match case expression body")),
+                SyntaxFactory.BreakStatement()
+            },
+            MatchCaseBlockBodySyntax blockBody => new StatementSyntax[]
+            {
+                VisitBlock(context, blockBody.Block) as CSBlockSyntax ?? throw new CompilerError("Expected a block for match case block body"),
+            },
+            _ => throw new NotImplementedException(
+                $"Support for visiting {matchCaseSyntax.Body.GetType()} nodes in Roslyn transformer not yet implemented")
+        });
+    }
+
+    private SyntaxList<SwitchLabelSyntax> CreateMatchCaseLabels(CompilationContext context, MatchCaseSyntax matchCaseSyntax)
+    {
+        return SyntaxFactory.List(matchCaseSyntax.Patterns.Select(i => (SwitchLabelSyntax)SyntaxFactory.CasePatternSwitchLabel(
+            i switch
+            {
+                MatchCasePatternExpressionSyntax patternExpression => 
+                    SyntaxFactory.ConstantPattern(
+                        Visit(context, patternExpression.Expression) as CSExpressionSyntax
+                        ?? throw new CompilerError("Expected an expression for match case pattern")),
+                MatchCasePatternElseSyntax _ => SyntaxFactory.DiscardPattern(),
+                _ => throw new NotImplementedException(
+                    $"Support for visiting {i.GetType()} nodes in Roslyn transformer not yet implemented")
+            }, SyntaxFactory.Token(SyntaxKind.ColonToken))));
     }
 
     private CSharpSyntaxNode? VisitForInSyntax(CompilationContext context, ForInSyntax forInSyntax)
@@ -769,7 +825,7 @@ internal class RoslynTransformerVisitor : ISyntaxTransformer<CSharpSyntaxNode?>
                 .WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(args)));
         }
 
-        throw new CompilerError("No matched method to call");
+        throw new CompilerError($"No matched method to call for call expression: {call}");
     }
 
     private static void ValidateCallArgumentNames(DeclaredFunction declaredFunction, IList<CallArgumentSyntax> callArguments)

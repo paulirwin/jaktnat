@@ -87,6 +87,7 @@
         <EmbeddedResource Include="samples\structs\this_dot_shorthand.jakt" />
         <EmbeddedResource Include="samples\structs\this_dot_shorthand_method.jakt" />
         <EmbeddedResource Include="samples\structs\value_semantics.jakt" />
+        <EmbeddedResource Include="samples\match\match_an_expression.jakt" />
     </ItemGroup>
 
     <ItemGroup>

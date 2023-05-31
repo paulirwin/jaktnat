@@ -274,7 +274,7 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         return new ArrayTypeIdentifierSyntax(namedType);
     }
 
-    public override SyntaxNode? VisitBlock(JaktnatParser.BlockContext context)
+    public override BlockSyntax VisitBlock(JaktnatParser.BlockContext context)
     {
         var block = new BlockSyntax();
 
@@ -1073,5 +1073,71 @@ internal class JaktnatVisitor : JaktnatBaseVisitor<SyntaxNode?>
         }
         
         return new ForInSyntax(new BlockScopedIdentifierSyntax(identifier), expression, block);
+    }
+
+    public override MatchCasePatternElseSyntax VisitMatchCasePatternElse(JaktnatParser.MatchCasePatternElseContext context)
+    {
+        return new MatchCasePatternElseSyntax();
+    }
+
+    public override MatchCasePatternExpressionSyntax VisitMatchCasePatternExpression(JaktnatParser.MatchCasePatternExpressionContext context)
+    {
+        var expression = VisitExpression(context.expression());
+
+        return new MatchCasePatternExpressionSyntax(expression);
+    }
+
+    public override MatchCasePatternSyntax VisitMatchCasePattern(JaktnatParser.MatchCasePatternContext context)
+    {
+        return base.VisitMatchCasePattern(context) as MatchCasePatternSyntax 
+            ?? throw new ParserError("Unable to parse match case pattern", context.start);
+    }
+
+    public override MatchCaseSyntax VisitMatchCase(JaktnatParser.MatchCaseContext context)
+    {
+        var patterns = context.matchCasePattern()
+            .Select(VisitMatchCasePattern)
+            .ToList();
+
+        var body = VisitMatchCaseBody(context.matchCaseBody());
+        
+        return new MatchCaseSyntax(patterns, body);
+    }
+
+    public override MatchCaseBodySyntax VisitMatchCaseBody(JaktnatParser.MatchCaseBodyContext context)
+    {
+        if (context.expression() is { } expression)
+        {
+            var expressionSyntax = VisitExpression(expression);
+
+            return new MatchCaseExpressionBodySyntax(expressionSyntax);
+        }
+        
+        if (context.block() is { } block)
+        {
+            var blockSyntax = VisitBlock(block);
+
+            return new MatchCaseBlockBodySyntax(blockSyntax);
+        }
+        
+        throw new ParserError("Unexpected match case body", context.start);
+    }
+
+    public override MatchExpressionSyntax VisitMatchExpression(JaktnatParser.MatchExpressionContext context)
+    {
+        var expression = VisitExpression(context.expression());
+        
+        var cases = context.matchCase()
+            .Select(VisitMatchCase)
+            .ToList();
+        
+        return new MatchExpressionSyntax(expression, cases);
+    }
+
+    public override MatchStatementSyntax VisitMatchStatement(JaktnatParser.MatchStatementContext context)
+    {
+        var matchExpression = VisitMatchExpression(context.matchExpression());
+
+        return new MatchStatementSyntax(matchExpression);
     }
 }

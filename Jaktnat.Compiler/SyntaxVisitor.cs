@@ -238,6 +238,40 @@ internal static class SyntaxVisitor
             
             VisitInternal(obj, context, forInSyntax.Block);
         }
+        else if (node is MatchStatementSyntax matchStatementSyntax)
+        {
+            VisitInternal(obj, context, matchStatementSyntax.MatchExpression);
+        }
+        else if (node is MatchExpressionSyntax matchExpressionSyntax)
+        {
+            VisitInternal(obj, context, matchExpressionSyntax.Expression);
+            
+            foreach (var matchCase in matchExpressionSyntax.Cases)
+            {
+                VisitInternal(obj, context, matchCase);
+            }
+        }
+        else if (node is MatchCaseSyntax matchCaseSyntax)
+        {
+            foreach (var patternSyntax in matchCaseSyntax.Patterns)
+            {
+                VisitInternal(obj, context, patternSyntax);
+            }
+            
+            VisitInternal(obj, context, matchCaseSyntax.Body);
+        }
+        else if (node is MatchCasePatternExpressionSyntax patternExpressionSyntax)
+        {
+            VisitInternal(obj, context, patternExpressionSyntax.Expression);
+        }
+        else if (node is MatchCaseBlockBodySyntax matchCaseBlockBodySyntax)
+        {
+            VisitInternal(obj, context, matchCaseBlockBodySyntax.Block);
+        }
+        else if (node is MatchCaseExpressionBodySyntax matchCaseExpressionBodySyntax)
+        {
+            VisitInternal(obj, context, matchCaseExpressionBodySyntax.Expression);
+        }
 
         InvokeVisit(obj, context, node);
     }

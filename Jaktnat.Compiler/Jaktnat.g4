@@ -36,6 +36,7 @@ block: LCURLY statement* RCURLY;
 
 statement: 
     block 
+    | matchStatement
     | expressionStatement
     | ifStatement 
     | tryStatement
@@ -66,6 +67,8 @@ expressionStatement: expression SEMICOLON?;
 ifStatement: IF expression block elseStatement?;
 
 guardStatement: GUARD expression elseStatement;
+
+matchStatement: matchExpression;
 
 tryStatement: TRY (expression | block) catchClause;
 
@@ -120,7 +123,8 @@ primaryExpr:
     | typeName
     | array
     | scopeAccess
-    | memberAccess;
+    | memberAccess
+    | matchExpression;
     
 thisExpression: THIS;
 
@@ -223,6 +227,20 @@ postfixUnaryOperator:
     { JaktnatParserSupport.IsPostfixOp(_input) }?
     PLUSPLUS
     | MINUSMINUS;
+    
+matchExpression: MATCH expression LCURLY matchCase* RCURLY;
+
+matchCase: matchCasePattern (PIPE matchCasePattern)* FATARROW matchCaseBody SEMICOLON?;
+
+matchCaseBody: expression | block;
+
+matchCasePattern: 
+    matchCasePatternExpression
+    | matchCasePatternElse;
+    
+matchCasePatternExpression: LPAREN expression RPAREN;
+
+matchCasePatternElse: ELSE;
 
 NUMBER_SUFFIX: ('f32' | 'f64' | 'u8' | 'u16' | 'u32' | 'u64' | 'uz' | 'i8' | 'i16' | 'i32' | 'i64');
 ASBANG: 'as!';
@@ -260,6 +278,7 @@ CSHARP: 'csharp';
 FOR: 'for';
 IN: 'in';
 GUARD: 'guard';
+MATCH: 'match';
 
 FLOATING: MINUS? NUMBER_DIGIT+ '.' NUMBER_DIGIT+;
 INTEGER: MINUS? NUMBER_DIGIT+;
